@@ -9,7 +9,7 @@ Built for the **Tether Developers Cup**, entering all three tracks:
 | Track | What FanCircle uses it for |
 |-------|----------------------------|
 | **Pears** (Holepunch / Hyperswarm) | Fully peer-to-peer match rooms — chat, reactions, and prediction polls travel directly between fans over the Hyperswarm DHT. No application server. |
-| **QVAC** (on-device AI) | Every chat message is translated **on your own device** into each fan's language through the QVAC SDK (Bergamot NMT). No cloud AI. Vietnamese ↔ English ↔ Spanish ↔ Arabic ↔ … |
+| **QVAC** (on-device AI) | Every chat message is translated **on your own device** into each fan's language through the QVAC SDK (Bergamot NMT) — Vietnamese ↔ English ↔ Spanish ↔ Arabic ↔ … And a grounded on-device LLM answers football questions (`/ask`), in every fan's language. No cloud AI. |
 | **WDK** (Wallet Development Kit) | Self-custodial USD₮ tipping to room hosts / fan commentators. Each fan holds their own seed; tips are real on-chain transfers (Sepolia testnet). |
 
 > **The theme is the filter, the stack is the point.** FanCircle is a watch-party app, but its reason to exist is that it genuinely needs all three parts of the Tether stack — P2P for censorship-resistant rooms, on-device AI so a fan on a weak network in a developing country can still cross the language barrier, and self-custodial money so value flows fan-to-fan without a platform in the middle.
@@ -42,7 +42,8 @@ Now open **http://localhost:8080** and **http://localhost:8081** in two browser 
 2. On **8081 (Alex)** paste it into **paste room link** and click **Join**. Within a few seconds both show **2 fans in room**.
 3. Type a message on either side **in your own language**. The other fan sees it translated live, on-device (🌐).
 4. Click **＋ New poll** to run a prediction poll; both fans vote and tallies sync peer-to-peer.
-5. Click **💸 tip** next to a fan to send USD₮ *(requires one-time faucet funding — see below)*.
+5. Type **`/ask offside rule?`** (or any football question) — a small LLM answers **on your device**, and the answer is shared to the room in everyone's language.
+6. Click **💸 tip** next to a fan to send USD₮ *(needs one-time setup — see below)*.
 
 > **First translation downloads a model.** The first time a language pair is used, QVAC fetches a small (~20–35 MB) Bergamot model and caches it. Subsequent translations are instant and fully offline. Try it: **turn off your Wi-Fi and keep chatting — translation still works.** That is the whole point of on-device AI.
 
@@ -57,10 +58,12 @@ A room is a 32-byte topic. Peers `swarm.join(topic)` and connect directly over t
 
 *Verify it:* `npm run spike:p2p` spins up two swarms that find each other over the live DHT and exchange messages.
 
-### QVAC — `src/ai.mjs`
-Translation runs **entirely on-device through the QVAC SDK** (`@qvac/sdk`), using Bergamot NMT models loaded from QVAC's registry. Each user sets their language; any incoming message in another language is translated locally before display. Pairs with no direct model pivot through English automatically. No cloud AI API is ever called — required by the QVAC track, and the reason it keeps working with the network off.
+### QVAC — `src/ai.mjs` (translation) + `src/assistant.mjs` (match assistant)
+Translation runs **entirely on-device through the QVAC SDK** (`@qvac/sdk`), using Bergamot NMT models loaded from QVAC's registry. Each user sets their language; any incoming message in another language is translated locally before display. Pairs with no direct model pivot through English automatically.
 
-*Verify it:* `npm run spike:qvac` translates English↔Vietnamese on-device and prints latency (~250 ms/sentence after the model is cached).
+The **match assistant** (`/ask …`) is a small grounded LLM (Qwen3-0.6B) run through QVAC `completion()`, answering rules/stats questions on-device. A fan's question is translated to English, answered locally, then the answer is shared to the room and translated back into each fan's own language — a fully multilingual, fully offline loop. No cloud AI API is ever called — required by the QVAC track, and the reason it keeps working with the network off.
+
+*Verify it:* `npm run spike:qvac` translates English↔Vietnamese on-device (~250 ms/sentence cached); `node spikes/spike-llm.mjs` runs the grounded assistant.
 
 ### WDK — `src/wallet.mjs`
 Each fan gets a **self-custodial** BIP-39 wallet via `@tetherto/wdk` + `@tetherto/wdk-wallet-evm` (no custodian; the seed never leaves the machine). Tips are real ERC-20 USD₮ `transfer()`s on the **Sepolia** testnet; the returned tx hash links to Etherscan so anyone can verify the transfer on-chain.
@@ -134,7 +137,7 @@ No pre-existing project code was reused; the codebase was built during the hacka
 ## Roadmap (post first-cut hardening)
 
 - **Voice notes** — record → QVAC Whisper transcription → translate → post (audio blobs over the room, not live streaming).
-- **Offline "match assistant"** — QVAC Qwen3 LLM answering rules/stats questions in-room, with RAG over match facts; also a higher-quality LLM translation fallback for idioms/slang.
+- **Assistant RAG** — upgrade the match assistant to QVAC's full RAG pipeline over live match data + a higher-quality LLM translation fallback for idioms/slang.
 - **Durable rooms with Autobase** — late-joiners replicate history; multi-writer convergent poll state.
 - **Gasless USD₮ tipping** — WDK ERC-4337 / EIP-7702 modules so fans pay fees in USD₮, no ETH needed.
 - **Native Pear app** — package the P2P core into a Bare worklet + Electron shell, distributed via `pear://` with peer-to-peer updates.
