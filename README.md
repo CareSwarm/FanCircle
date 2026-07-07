@@ -1,0 +1,129 @@
+# 🏟️ FanCircle
+
+**A peer-to-peer, multilingual World Cup watch-party — no servers, no accounts, on-device AI translation, and self-custodial USDT tipping.**
+
+Football is the most global thing on earth, but the way we watch it together online is not. Group chats are centralized and blocked in football-mad countries; nobody translates cross-language banter in real time; and there is no honest way to send your friend — or a great fan commentator halfway across the world — a few dollars. FanCircle fixes all three, and it does it during the one moment 6 billion people care: **the 2026 World Cup, whose final is July 19.**
+
+Built for the **Tether Developers Cup**, entering all three tracks:
+
+| Track | What FanCircle uses it for |
+|-------|----------------------------|
+| **Pears** (Holepunch / Hyperswarm) | Fully peer-to-peer match rooms — chat, reactions, and prediction polls travel directly between fans over the Hyperswarm DHT. No application server. |
+| **QVAC** (on-device AI) | Every chat message is translated **on your own device** into each fan's language through the QVAC SDK (Bergamot NMT). No cloud AI. Vietnamese ↔ English ↔ Spanish ↔ Arabic ↔ … |
+| **WDK** (Wallet Development Kit) | Self-custodial USD₮ tipping to room hosts / fan commentators. Each fan holds their own seed; tips are real on-chain transfers (Sepolia testnet). |
+
+> **The theme is the filter, the stack is the point.** FanCircle is a watch-party app, but its reason to exist is that it genuinely needs all three parts of the Tether stack — P2P for censorship-resistant rooms, on-device AI so a fan on a weak network in a developing country can still cross the language barrier, and self-custodial money so value flows fan-to-fan without a platform in the middle.
+
+---
+
+## Quick start (judges: run it in ~2 minutes)
+
+**Prerequisites:** [Node.js](https://nodejs.org) **≥ 22.17** (`node -v` to check). macOS / Linux / Windows.
+
+```bash
+git clone <this-repo>
+cd FanCircle
+npm install
+```
+
+Open **two terminals** to play two fans on one machine:
+
+```bash
+# Terminal 1 — a Vietnamese fan
+npm run demo:minh      # → http://localhost:8080
+
+# Terminal 2 — an English fan
+npm run demo:alex      # → http://localhost:8081
+```
+
+Now open **http://localhost:8080** and **http://localhost:8081** in two browser windows:
+
+1. On **8080 (Minh)** click **＋ Create room**, then **copy** the room link.
+2. On **8081 (Alex)** paste it into **paste room link** and click **Join**. Within a few seconds both show **2 fans in room**.
+3. Type a message on either side **in your own language**. The other fan sees it translated live, on-device (🌐).
+4. Click **＋ New poll** to run a prediction poll; both fans vote and tallies sync peer-to-peer.
+5. Click **💸 tip** next to a fan to send USD₮ *(requires one-time faucet funding — see below)*.
+
+> **First translation downloads a model.** The first time a language pair is used, QVAC fetches a small (~20–35 MB) Bergamot model and caches it. Subsequent translations are instant and fully offline. Try it: **turn off your Wi-Fi and keep chatting — translation still works.** That is the whole point of on-device AI.
+
+Two machines on different networks work exactly the same way — share the room link over any channel; the Hyperswarm DHT connects them directly.
+
+---
+
+## How each track is used (for judges)
+
+### Pears — `src/p2p.mjs`
+A room is a 32-byte topic. Peers `swarm.join(topic)` and connect directly over the **Hyperswarm DHT** with end-to-end-encrypted (Noise) streams — the exact pattern from the official *"Making a Pear Desktop Application"* guide. Chat, reactions, poll creation and votes are newline-delimited JSON gossiped to every connected peer. There is **no application server**: the localhost HTTP/WebSocket in this build is only how the local browser UI talks to the local process (like Electron IPC); **all fan-to-fan traffic is Hyperswarm.** Prediction-poll votes are deduplicated per voter and tallied identically on every peer.
+
+*Verify it:* `npm run spike:p2p` spins up two swarms that find each other over the live DHT and exchange messages.
+
+### QVAC — `src/ai.mjs`
+Translation runs **entirely on-device through the QVAC SDK** (`@qvac/sdk`), using Bergamot NMT models loaded from QVAC's registry. Each user sets their language; any incoming message in another language is translated locally before display. Pairs with no direct model pivot through English automatically. No cloud AI API is ever called — required by the QVAC track, and the reason it keeps working with the network off.
+
+*Verify it:* `npm run spike:qvac` translates English↔Vietnamese on-device and prints latency (~250 ms/sentence after the model is cached).
+
+### WDK — `src/wallet.mjs`
+Each fan gets a **self-custodial** BIP-39 wallet via `@tetherto/wdk` + `@tetherto/wdk-wallet-evm` (no custodian; the seed never leaves the machine). Tips are real ERC-20 USD₮ `transfer()`s on the **Sepolia** testnet; the returned tx hash links to Etherscan so anyone can verify the transfer on-chain.
+
+*Verify it:* `npm run spike:wdk` creates a wallet, derives HD accounts, and reads live Sepolia balances.
+
+---
+
+## Enabling USD₮ tipping (one-time faucet setup)
+
+Tipping needs a funded wallet and the test-USD₮ contract address. Print your two demo wallet addresses:
+
+```bash
+node scripts/wallet-info.mjs
+```
+
+Then, for each address:
+
+1. **Get test ETH (gas)** from a Sepolia faucet (e.g. [sepolia-faucet.pk910.de](https://sepolia-faucet.pk910.de) or [Google Cloud Sepolia faucet](https://cloud.google.com/application/web3/faucet/ethereum/sepolia)).
+2. **Get mock USD₮** from the [Candide test-ERC20 faucet](https://dashboard.candide.dev/faucet) or [Pimlico test-ERC20 faucet](https://dashboard.pimlico.io/test-erc20-faucet). Note the token's contract address.
+3. Start the app with that contract address set:
+
+```bash
+FANCIRCLE_USDT=0xYourTestUsdtContract npm run demo:minh
+FANCIRCLE_USDT=0xYourTestUsdtContract npm run demo:alex
+```
+
+Now the wallet shows a USD₮ balance and the **💸 tip** button sends a real on-chain transfer. *(Gasless "pay fees in USD₮" via the WDK ERC-4337 / 7702 modules is on the roadmap below.)*
+
+---
+
+## Architecture
+
+```
+Browser UI (app/)  ──WebSocket──►  Node backend (src/backend.mjs)  ──►  Room  (Pears / Hyperswarm)  ──DHT──►  other fans
+   one per fan                     one process = one fan            ├──►  AI    (QVAC / on-device translate)
+                                                                    └──►  Wallet (WDK / USD₮ on Sepolia)
+```
+
+The P2P layer (`src/p2p.mjs`) is deliberately isolated so it can be lifted into a **Bare worklet** for native Pear-app packaging (`pear://` distribution, P2P OTA updates) — see roadmap.
+
+---
+
+## Third-party services (disclosure per hackathon rules)
+
+- **QVAC model registry** — Bergamot translation models are fetched on first use from QVAC's registry, then cached and run **locally**. Inference is 100% on-device; no cloud AI.
+- **Ethereum RPC** — `https://sepolia.drpc.org` (public Sepolia RPC) for wallet balance reads and broadcasting tip transactions. Blockchain infrastructure, not an AI service.
+- **Testnet faucets** — Candide / Pimlico (mock USD₮) and a public Sepolia ETH faucet, used only to fund demo wallets.
+
+No pre-existing project code was reused; the codebase was built during the hackathon. Open-source dependencies are listed in `package.json`.
+
+---
+
+## Roadmap (post first-cut hardening)
+
+- **Voice notes** — record → QVAC Whisper transcription → translate → post (audio blobs over the room, not live streaming).
+- **Offline "match assistant"** — QVAC Qwen3 LLM answering rules/stats questions in-room, with RAG over match facts; also a higher-quality LLM translation fallback for idioms/slang.
+- **Durable rooms with Autobase** — late-joiners replicate history; multi-writer convergent poll state.
+- **Gasless USD₮ tipping** — WDK ERC-4337 / EIP-7702 modules so fans pay fees in USD₮, no ETH needed.
+- **Native Pear app** — package the P2P core into a Bare worklet + Electron shell, distributed via `pear://` with peer-to-peer updates.
+
+---
+
+## License
+
+[Apache-2.0](LICENSE). Public for the duration of the Tether Developers Cup and a reasonable period after.
