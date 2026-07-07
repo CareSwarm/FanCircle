@@ -82,6 +82,15 @@ async function main () {
     finalPollMinh.tally[0] === 1 && finalPollMinh.tally[1] === 1,
   'PEARS: poll votes gossiped + tallied identically on both peers')
 
+  // 3.5) QVAC LLM — Minh asks the on-device match assistant; answer shared to the room
+  console.log('\n  Minh asks the match assistant (/ask)…')
+  minh.send({ t: 'chat', text: '/ask How long is extra time in a knockout match if the score is level?' })
+  const aAlex = await alex.wait((m) => m.t === 'assistant', 120000) // first run may download the model
+  const aMinh = await minh.wait((m) => m.t === 'assistant', 120000)
+  console.log('  assistant answer (en):', aAlex.answer)
+  console.log('  Minh (vi) sees      :', aMinh.translated || aMinh.answer)
+  check(!!aAlex.answer && /30|minute/i.test(aAlex.answer), 'QVAC LLM: on-device match assistant answered + shared to room + translated')
+
   // 4) WDK — Alex tips Minh (only when wallets are funded, i.e. local-chain mode)
   const minhReady = minh.latest((m) => m.t === 'ready')
   const alexBal = alex.latest((m) => m.t === 'balances')

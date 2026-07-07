@@ -11,6 +11,7 @@ import { fileURLToPath } from 'url'
 import { WebSocketServer } from 'ws'
 import { Room } from './p2p.mjs'
 import { AI } from './ai.mjs'
+import { Assistant } from './assistant.mjs'
 import { Wallet, CHAIN } from './wallet.mjs'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
@@ -30,6 +31,7 @@ const SUPPORTED_LANGS = [
 ]
 
 const ai = new AI()
+const assistant = new Assistant()
 const wallet = new Wallet()
 const state = {
   profile: { name: process.env.NAME || 'Fan-' + crypto.randomBytes(2).toString('hex'), lang: process.env.LANG_CODE || 'en' },
@@ -88,10 +90,43 @@ async function onPeerMessage (msg) {
     case 'poll-vote':
       recordVote(msg.pollId, msg.voter, msg.optionIndex)
       break
+    case 'assistant':
+      await deliverAssistant(msg)
+      break
     case 'tip':
       pushUI({ t: 'tip', from: msg.from, name: msg.name, amount: msg.amount, hash: msg.hash, explorer: msg.explorer, to: msg.to })
       break
   }
+}
+
+// The on-device match assistant answers in English; each peer translates the answer locally.
+async function deliverAssistant (msg) {
+  let translated = null
+  if (msg.lang && msg.lang !== state.profile.lang) {
+    try { translated = await ai.translate(msg.text, msg.lang, state.profile.lang) } catch { translated = null }
+  }
+  pushUI({ t: 'assistant', from: msg.from, name: msg.name, question: msg.question, answer: msg.text, translated, ts: msg.ts })
+}
+
+async function handleAsk (question) {
+  if (!state.room) return
+  pushUI({ t: 'assistant-pending', name: state.profile.name, question })
+  // Ground the small English model: translate the question to English if needed.
+  let qEn = question
+  try { if (state.profile.lang !== 'en') qEn = await ai.translate(question, state.profile.lang, 'en') } catch {}
+  let answer
+  try {
+    answer = await assistant.ask(qEn, (p) => {
+      const pct = Math.floor((p?.progress ?? p ?? 0) * 100)
+      if (pct % 25 === 0) pushUI({ t: 'toast', level: 'info', text: `Loading match assistant… ${pct}%` })
+    })
+  } catch (e) {
+    pushUI({ t: 'toast', level: 'error', text: 'Assistant failed: ' + (e?.message || e) })
+    return
+  }
+  const msg = { type: 'assistant', id: crypto.randomBytes(6).toString('hex'), from: state.room.me, name: state.profile.name, question, lang: 'en', text: answer, ts: Date.now() }
+  state.room.broadcast(msg)
+  await deliverAssistant(msg)
 }
 
 function recordVote (pollId, voter, optionIndex) {
@@ -158,7 +193,9 @@ async function handleUI (ws, m) {
 
     case 'chat': {
       if (!state.room) return
-      const msg = { type: 'chat', id: crypto.randomBytes(6).toString('hex'), from: state.room.me, name: state.profile.name, lang: state.profile.lang, text: String(m.text).slice(0, 2000), ts: Date.now() }
+      const text = String(m.text).slice(0, 2000)
+      if (/^\/ask\s+/i.test(text.trim())) { await handleAsk(text.trim().replace(/^\/ask\s+/i, '')); break }
+      const msg = { type: 'chat', id: crypto.randomBytes(6).toString('hex'), from: state.room.me, name: state.profile.name, lang: state.profile.lang, text, ts: Date.now() }
       state.room.broadcast(msg)
       pushUI({ t: 'chat', id: msg.id, from: msg.from, name: msg.name, lang: msg.lang, text: msg.text, translated: null, ts: msg.ts, self: true })
       break

@@ -35,6 +35,8 @@ function handle (m) {
     case 'reaction': floatReaction(m.emoji); break
     case 'polls': renderPolls(m.polls); break
     case 'tip': renderTip(m); break
+    case 'assistant-pending': renderAssistantPending(m); break
+    case 'assistant': renderAssistant(m); break
     case 'system': addSystem(m.text); break
     case 'toast': toast(m.text, m.level); break
   }
@@ -140,6 +142,27 @@ function renderTip (m) {
   const link = m.explorer ? ` · <a href="${esc(m.explorer)}" target="_blank">view tx</a>` : ''
   wrap.innerHTML = `💸 <b>${esc(m.name || 'someone')}</b> tipped ${esc(m.amount)} USD₮${link}`
   chat.appendChild(wrap); if (atBottom()) scroll()
+}
+
+let pendingEl = null
+function renderAssistantPending (m) {
+  const stick = atBottom()
+  pendingEl = el('div', 'msg assistant')
+  pendingEl.innerHTML = `<div class="head"><span class="bot">🤖 Match Assistant</span> · asked by ${esc(m.name)}</div><div class="q">${esc(m.question)}</div><div class="thinking">thinking on-device…</div>`
+  chat.appendChild(pendingEl)
+  if (stick) scroll()
+}
+function renderAssistant (m) {
+  const stick = atBottom()
+  if (pendingEl) { pendingEl.remove(); pendingEl = null }
+  const d = el('div', 'msg assistant')
+  let html = `<div class="head"><span class="bot">🤖 Match Assistant</span> · asked by ${esc(m.name)}</div>`
+  html += `<div class="q">${esc(m.question)}</div>`
+  html += `<div class="ans">${esc(m.answer)}</div>`
+  if (m.translated && m.translated !== m.answer) html += `<div class="trans">${esc(m.translated)}</div>`
+  d.innerHTML = html
+  chat.appendChild(d)
+  if (stick) scroll()
 }
 
 // ---------- polls ----------
