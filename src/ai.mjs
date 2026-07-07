@@ -1,6 +1,6 @@
-// TRACK QVAC — on-device AI through the QVAC SDK (no cloud APIs).
-// Text translation via Bergamot NMT (English-pivot for pairs with no direct
-// model) and voice-note transcription via multilingual Whisper.
+// On-device translation (Bergamot NMT, English-pivot for pairs with no
+// direct model) and voice-note transcription (multilingual Whisper) — all
+// through the QVAC SDK, no cloud calls.
 
 import * as qvac from '@qvac/sdk'
 
@@ -9,13 +9,10 @@ function pairConst (from, to) {
   return qvac['BERGAMOT_' + from.toUpperCase() + '_' + to.toUpperCase()]
 }
 
-// QVAC's model registry is a single RocksDB-backed cache shared by every
-// process on the machine (each backend spawns its own `bare` inference
-// worker, which all contend for the same registry lock). Running several
-// FanCircle processes on one dev box for a demo can hit a transient "File
-// descriptor could not be locked" — real fans are on separate devices with
-// their own cache, so this never happens in production, but retry here
-// anyway since the failure mode is genuinely transient.
+// QVAC's model registry is one shared cache per machine (RocksDB-backed),
+// and each process spawns its own bare worker to hit it. A couple of those
+// racing for the lock throws "File descriptor could not be locked" — it's
+// transient, so just retry.
 async function withLockRetry (fn, { retries = 4, delayMs = 400 } = {}) {
   let lastErr
   for (let i = 0; i <= retries; i++) {

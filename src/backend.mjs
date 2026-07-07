@@ -1,7 +1,7 @@
-// FanCircle backend — one process = one user. Orchestrates the three tracks:
-//   Pears (Room / Hyperswarm) · QVAC (AI / translation) · WDK (Wallet / tipping)
-// Serves the local web UI (app/) and bridges it to the P2P room over WebSocket.
-// The localhost HTTP/WS is UI<->backend IPC only; peer<->peer traffic is 100% Hyperswarm.
+// One process = one fan. Wires up Room (p2p.mjs), AI (translation +
+// assistant), and Wallet, then serves the UI over local HTTP/WS.
+// That localhost socket is just UI<->backend IPC — all fan-to-fan traffic
+// is Hyperswarm.
 
 import http from 'http'
 import fs from 'fs'

@@ -1,9 +1,9 @@
-// TRACK WDK — self-custodial USDT tipping through the Wallet Development Kit.
-// Each user holds their own BIP-39 seed (no custodian). Tips are real ERC-20
-// transfers on the Sepolia testnet; the tx hash is shown and links to Etherscan.
+// Self-custodial USDT tipping via WDK. Each user holds their own BIP-39
+// seed (no custodian). Tips are real ERC-20 transfers; tx hash links to
+// Etherscan.
 //
-// Security note (hackathon MVP): the seed is stored in a gitignored file under
-// .wallet/. Block 3 upgrades this to OS keychain / encrypted-at-rest per WDK docs.
+// Seed lives in a gitignored file under .wallet/ — fine for a demo wallet,
+// swap for OS keychain / encrypted storage before this touches real funds.
 
 import fs from 'fs'
 import path from 'path'

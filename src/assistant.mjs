@@ -1,13 +1,11 @@
-// TRACK QVAC — on-device "match assistant". A small grounded LLM (Qwen3-0.6B)
-// answers football rules/stats questions locally through the QVAC SDK. Grounding
-// with an authoritative facts sheet keeps a tiny model accurate; Block 2 upgrades
-// this to the full QVAC RAG pipeline over live match data.
+// On-device match assistant — small grounded LLM (Qwen3-0.6B) answers
+// football questions through QVAC. The facts sheet below is what keeps a
+// model this small accurate; swap in QVAC's RAG pipeline for live match
+// data down the line.
 
 import * as qvac from '@qvac/sdk'
 
-// See src/ai.mjs for why: QVAC's model registry is a single shared cache
-// across every process on the machine, which can transiently lock-contend
-// when running several FanCircle backends on one dev box for a demo.
+// Same registry lock contention as ai.mjs — retry transient failures.
 async function withLockRetry (fn, { retries = 4, delayMs = 400 } = {}) {
   let lastErr
   for (let i = 0; i <= retries; i++) {

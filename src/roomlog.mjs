@@ -1,16 +1,11 @@
-// TRACK PEARS, deeper — a durable, replicated room log built on Autobase.
-// The room creator holds the single writer; every peer (including the
-// creator) replicates the resulting view over its own Hyperswarm swarm, so a
-// fan who joins after messages/votes happened still gets full history and an
-// authoritative poll tally — not just whatever gossip arrived after they
-// connected. Runs on a SEPARATE Hyperswarm instance from the room's live
-// gossip connections: Corestore replication is a Protomux-multiplexed
-// protocol that owns the whole stream it's attached to, so it can't safely
-// share a socket with the raw newline-JSON gossip in src/p2p.mjs.
+// Durable room history on Autobase. Creator is the sole writer, everyone
+// else replicates — a fan joining late still gets full chat/poll history,
+// not just whatever gossip arrives after they connect.
 //
-// Multi-writer (peers appending directly via Autobase's addWriter) works —
-// proven in spikes/spike-autobase.mjs — and is a natural upgrade; the single
-// writer here keeps join-time coordination simple for the MVP.
+// Own Hyperswarm instance, separate from p2p.mjs: Corestore replication is
+// protomux-based and can't share a socket with the raw newline-JSON gossip
+// over there. Multi-writer (addWriter) works fine too, just adds a grant
+// step on join we don't need yet.
 
 import Autobase from 'autobase'
 import Corestore from 'corestore'

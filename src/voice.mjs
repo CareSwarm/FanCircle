@@ -1,7 +1,5 @@
-// TRACK QVAC — voice-note audio handling. The browser records webm/opus via
-// MediaRecorder; QVAC's bundled decoder only auto-decodes .mp3/.m4a/.ogg/.wav/
-// .flac/.aac, so we convert webm -> wav with ffmpeg before handing it to
-// transcribe() (see spikes/spike-voice.mjs for the format investigation).
+// Browser records webm/opus; QVAC's decoder only auto-handles mp3/m4a/ogg/
+// wav/flac/aac, so convert to wav with ffmpeg before transcribe().
 
 import { execFile } from 'child_process'
 import { promisify } from 'util'

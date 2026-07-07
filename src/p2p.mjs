@@ -1,14 +1,9 @@
-// TRACK PEARS — peer-to-peer room over the Holepunch Hyperswarm DHT.
-// No application server: peers find each other by a shared topic and exchange
-// end-to-end-encrypted (Noise) messages directly. This module is intentionally
-// self-contained so it can be lifted into a Bare worklet for native Pear-app
-// packaging without changing the message protocol.
+// P2P room over the Hyperswarm DHT — no server, peers connect directly and
+// swap end-to-end-encrypted (Noise) messages. Kept self-contained so it can
+// move into a Bare worklet for native Pear packaging later.
 //
-// Durability: the room creator also runs a RoomLog (Autobase), a replicated
-// append-only history so a fan who joins mid-match still gets chat history
-// and an authoritative poll tally, not just gossip that arrived after they
-// connected. Every peer replicates it; see src/roomlog.mjs for why it runs
-// on its own Hyperswarm instance rather than this one.
+// Durable history + poll tallies are handled by roomlog.mjs (Autobase),
+// wired in below.
 
 import EventEmitter from 'events'
 import Hyperswarm from 'hyperswarm'
