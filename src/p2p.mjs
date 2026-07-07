@@ -3,21 +3,37 @@
 // end-to-end-encrypted (Noise) messages directly. This module is intentionally
 // self-contained so it can be lifted into a Bare worklet for native Pear-app
 // packaging without changing the message protocol.
+//
+// Durability: the room creator also runs a RoomLog (Autobase), a replicated
+// append-only history so a fan who joins mid-match still gets chat history
+// and an authoritative poll tally, not just gossip that arrived after they
+// connected. Every peer replicates it; see src/roomlog.mjs for why it runs
+// on its own Hyperswarm instance rather than this one.
 
 import EventEmitter from 'events'
 import Hyperswarm from 'hyperswarm'
 import crypto from 'hypercore-crypto'
 import b4a from 'b4a'
+import { RoomLog } from './roomlog.mjs'
+
+// Message types worth persisting for late joiners. Reactions are confetti —
+// replaying 50 old 🔥 on join would be noise, so they're gossip-only.
+const DURABLE_TYPES = new Set(['chat', 'voice', 'assistant', 'poll-create', 'poll-vote', 'tip'])
 
 export class Room extends EventEmitter {
   constructor ({ topic, profile } = {}) {
     super()
     this.swarm = new Hyperswarm()
+    this.isCreator = !topic
     this.topic = topic ? b4a.from(topic, 'hex') : crypto.randomBytes(32)
     this.profile = profile || { name: 'anon', lang: 'en' }
     this.me = b4a.toString(this.swarm.keyPair.publicKey, 'hex').slice(0, 6)
     // peerId(hex6) -> { conn, buf, profile }
     this.peers = new Map()
+
+    this.log = new RoomLog()
+    this.logKey = null
+    this._logFollowed = false
 
     this.swarm.on('connection', (conn, info) => this._onConnection(conn, info))
   }
@@ -27,9 +43,20 @@ export class Room extends EventEmitter {
   }
 
   async join () {
+    if (this.isCreator) {
+      this.logKey = await this.log.create()
+      this._afterLogReady() // fire-and-forget; own history is empty at t=0
+    }
     const discovery = this.swarm.join(this.topic, { server: true, client: true })
     await discovery.flushed()
     return this.topicHex
+  }
+
+  async _afterLogReady () {
+    try {
+      const history = await this.log.history()
+      this.emit('log-ready', history)
+    } catch {}
   }
 
   _onConnection (conn, info) {
@@ -38,7 +65,9 @@ export class Room extends EventEmitter {
     this.peers.set(id, peer)
 
     // Announce who we are so others can label + translate our messages.
-    this._sendTo(conn, { type: 'hello', from: this.me, profile: this.profile })
+    // logKey (when we have one, or once we learn one) lets new peers find the
+    // room's durable history without a separate out-of-band link.
+    this._sendTo(conn, { type: 'hello', from: this.me, profile: this.profile, logKey: this.logKey })
 
     conn.on('data', (data) => this._onData(id, data))
     conn.on('error', () => {})
@@ -68,12 +97,34 @@ export class Room extends EventEmitter {
     if (msg.type === 'hello') {
       peer.profile = msg.profile || peer.profile
       this.emit('peer-join', { id, profile: peer.profile })
+      if (msg.logKey && !this.logKey && !this.isCreator) {
+        this.logKey = msg.logKey
+        this._followLog(msg.logKey)
+      }
       return
     }
     // stamp the network-observed sender id
     msg._peer = id
     if (!msg.senderLang && peer.profile?.lang) msg.senderLang = peer.profile.lang
+    if (DURABLE_TYPES.has(msg.type)) this.log.append(msg).catch(() => {})
     this.emit('message', msg)
+  }
+
+  async _followLog (logKey) {
+    if (this._logFollowed) return
+    this._logFollowed = true
+    try {
+      await this.log.follow(logKey)
+      // Now that we know the log, tell peers who might not — closes multi-hop gaps.
+      this._broadcastHello()
+      await this._afterLogReady()
+    } catch {}
+  }
+
+  _broadcastHello () {
+    for (const { conn } of this.peers.values()) {
+      this._sendTo(conn, { type: 'hello', from: this.me, profile: this.profile, logKey: this.logKey })
+    }
   }
 
   _sendTo (conn, obj) {
@@ -86,6 +137,7 @@ export class Room extends EventEmitter {
     for (const { conn } of this.peers.values()) {
       try { conn.write(line) } catch {}
     }
+    if (DURABLE_TYPES.has(obj.type)) this.log.append(obj).catch(() => {})
   }
 
   memberList () {
@@ -97,6 +149,7 @@ export class Room extends EventEmitter {
 
   async destroy () {
     try { await this.swarm.destroy() } catch {}
+    try { await this.log.destroy() } catch {}
     this.peers.clear()
   }
 }

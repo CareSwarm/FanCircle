@@ -9,6 +9,25 @@ function pairConst (from, to) {
   return qvac['BERGAMOT_' + from.toUpperCase() + '_' + to.toUpperCase()]
 }
 
+// QVAC's model registry is a single RocksDB-backed cache shared by every
+// process on the machine (each backend spawns its own `bare` inference
+// worker, which all contend for the same registry lock). Running several
+// FanCircle processes on one dev box for a demo can hit a transient "File
+// descriptor could not be locked" — real fans are on separate devices with
+// their own cache, so this never happens in production, but retry here
+// anyway since the failure mode is genuinely transient.
+async function withLockRetry (fn, { retries = 4, delayMs = 400 } = {}) {
+  let lastErr
+  for (let i = 0; i <= retries; i++) {
+    try { return await fn() } catch (e) {
+      lastErr = e
+      if (!/lock/i.test(e?.message || '')) throw e
+      if (i < retries) await new Promise((r) => setTimeout(r, delayMs * (i + 1)))
+    }
+  }
+  throw lastErr
+}
+
 export class AI {
   constructor () {
     // cache: "from>to" -> Promise<modelId>
@@ -20,7 +39,8 @@ export class AI {
     if (this._models.has(key)) return this._models.get(key)
     const src = pairConst(from, to)
     if (!src) return null
-    const p = qvac.loadModel({ modelSrc: src, modelConfig: { engine: 'Bergamot', from, to } })
+    const p = withLockRetry(() => qvac.loadModel({ modelSrc: src, modelConfig: { engine: 'Bergamot', from, to } }))
+      .catch((e) => { this._models.delete(key); throw e }) // don't cache a permanent failure
     this._models.set(key, p)
     return p
   }
@@ -71,7 +91,7 @@ export class AI {
     const key = lang || 'auto'
     if (!this._whisper) this._whisper = new Map()
     if (!this._whisper.has(key)) {
-      this._whisper.set(key, qvac.loadModel({
+      const p = withLockRetry(() => qvac.loadModel({
         modelSrc: qvac.WHISPER_BASE_Q8_0,
         modelConfig: {
           audio_format: 'f32le',
@@ -80,7 +100,8 @@ export class AI {
           temperature: 0.0,
           ...(lang ? { language: lang } : { detect_language: true })
         }
-      }))
+      })).catch((e) => { this._whisper.delete(key); throw e })
+      this._whisper.set(key, p)
     }
     return this._whisper.get(key)
   }

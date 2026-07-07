@@ -8,7 +8,7 @@ Built for the **Tether Developers Cup**, entering all three tracks:
 
 | Track | What FanCircle uses it for |
 |-------|----------------------------|
-| **Pears** (Holepunch / Hyperswarm) | Fully peer-to-peer match rooms — chat, reactions, and prediction polls travel directly between fans over the Hyperswarm DHT. No application server. |
+| **Pears** (Holepunch / Hyperswarm) | Fully peer-to-peer match rooms — chat, reactions, and prediction polls travel directly between fans over the Hyperswarm DHT. No application server. Room history and poll tallies are backed by an **Autobase** replicated log, so a fan who joins mid-match still gets full history and a correct tally — not just gossip from the moment they connected. |
 | **QVAC** (on-device AI) | Every chat message is translated **on your own device** into each fan's language through the QVAC SDK (Bergamot NMT) — Vietnamese ↔ English ↔ Spanish ↔ Arabic ↔ … Voice notes are transcribed on-device (Whisper) and translated the same way. A grounded on-device LLM answers football questions (`/ask`), in every fan's language. No cloud AI — speech, translation, and completion all run locally. |
 | **WDK** (Wallet Development Kit) | Self-custodial USD₮ tipping to room hosts / fan commentators. Each fan holds their own seed; tips are real on-chain transfers (Sepolia testnet). |
 
@@ -54,10 +54,12 @@ Two machines on different networks work exactly the same way — share the room 
 
 ## How each track is used (for judges)
 
-### Pears — `src/p2p.mjs`
-A room is a 32-byte topic. Peers `swarm.join(topic)` and connect directly over the **Hyperswarm DHT** with end-to-end-encrypted (Noise) streams — the exact pattern from the official *"Making a Pear Desktop Application"* guide. Chat, reactions, poll creation and votes are newline-delimited JSON gossiped to every connected peer. There is **no application server**: the localhost HTTP/WebSocket in this build is only how the local browser UI talks to the local process (like Electron IPC); **all fan-to-fan traffic is Hyperswarm.** Prediction-poll votes are deduplicated per voter and tallied identically on every peer.
+### Pears — `src/p2p.mjs` (gossip) + `src/roomlog.mjs` (durable history)
+A room is a 32-byte topic. Peers `swarm.join(topic)` and connect directly over the **Hyperswarm DHT** with end-to-end-encrypted (Noise) streams — the exact pattern from the official *"Making a Pear Desktop Application"* guide. Chat, reactions, poll creation and votes are newline-delimited JSON gossiped to every connected peer for instant delivery. There is **no application server**: the localhost HTTP/WebSocket in this build is only how the local browser UI talks to the local process (like Electron IPC); **all fan-to-fan traffic is Hyperswarm.**
 
-*Verify it:* `npm run spike:p2p` spins up two swarms that find each other over the live DHT and exchange messages.
+On top of that, the room creator runs an **Autobase** — a Holepunch multiwriter append-log — and every peer replicates it over its own Hyperswarm swarm (Corestore replication is a separate protocol from the raw gossip, so it gets its own connections). Chat, votes, voice notes, assistant answers and tips are durably appended; when a fan joins mid-match, their backend replays that log — full chat history and a correct, authoritative poll tally, translated on-device into their language — not just whatever gossip happens to arrive after they connect. Reactions are intentionally left out of the durable log (nobody wants 50 old 🔥 replaying on join). Multi-writer (peers appending directly, granted via Autobase's `addWriter`) is proven in `spikes/spike-autobase.mjs` and is a natural upgrade from this single-writer-per-room MVP.
+
+*Verify it:* `npm run spike:p2p` spins up two swarms that find each other over the live DHT and exchange messages. `node spikes/spike-autobase.mjs` proves multi-writer convergence + late-join replication in isolation; `node spikes/spike-lateJoiner.mjs` (with three backends running) proves it through the real app — a third fan joining after messages and votes already happened gets full backfill and a correct tally.
 
 ### QVAC — `src/ai.mjs` (translation) + `src/assistant.mjs` (match assistant)
 Translation runs **entirely on-device through the QVAC SDK** (`@qvac/sdk`), using Bergamot NMT models loaded from QVAC's registry. Each user sets their language; any incoming message in another language is translated locally before display. Pairs with no direct model pivot through English automatically.
@@ -139,10 +141,14 @@ No pre-existing project code was reused; the codebase was built during the hacka
 
 ## Roadmap (post first-cut hardening)
 
+- **Multi-writer rooms** — let any fan (not just the creator) durably append via Autobase's `addWriter`, already proven in `spikes/spike-autobase.mjs`.
 - **Assistant RAG** — upgrade the match assistant to QVAC's full RAG pipeline over live match data + a higher-quality LLM translation fallback for idioms/slang.
-- **Durable rooms with Autobase** — late-joiners replicate history; multi-writer convergent poll state.
 - **Gasless USD₮ tipping** — WDK ERC-4337 / EIP-7702 modules so fans pay fees in USD₮, no ETH needed.
 - **Native Pear app** — package the P2P core into a Bare worklet + Electron shell, distributed via `pear://` with peer-to-peer updates.
+
+## Running multiple fans on one machine (for testing)
+
+Each backend is one fan (`npm run demo:minh`, `demo:alex`, or `PORT=... NAME=... LANG_CODE=... WALLET_DIR=... node src/backend.mjs` for more). This works great for local testing, with one caveat: QVAC's model cache/registry (`~/.qvac`) is shared machine-wide, and each backend spawns its own `bare` inference worker — running several at once can occasionally hit a transient "file descriptor could not be locked" the first time two backends need the registry at the same instant. `src/ai.mjs`/`src/assistant.mjs` retry automatically, so it self-heals within a couple seconds. This never happens in real use: each fan is on their own device with their own cache.
 
 ---
 

@@ -37,7 +37,8 @@ const wallet = new Wallet()
 const state = {
   profile: { name: process.env.NAME || 'Fan-' + crypto.randomBytes(2).toString('hex'), lang: process.env.LANG_CODE || 'en' },
   room: null,
-  polls: new Map() // pollId -> { id, question, options:[], votes: Map(voterId->idx), creator }
+  polls: new Map(), // pollId -> { id, question, options:[], votes: Map(voterId->idx), creator }
+  seenMsgIds: new Set() // dedup: a message can arrive via live gossip AND room-log history replay
 }
 
 const uiClients = new Set()
@@ -69,9 +70,23 @@ function wireRoom (room) {
     pushUI({ t: 'system', text: `${profile?.name || 'someone'} left` })
   })
   room.on('message', (msg) => onPeerMessage(msg))
+  room.on('log-ready', (history) => replayHistory(history).catch((e) => console.error('replay', e)))
+}
+
+// The room creator durably logs chat/voice/assistant/poll/tip events via
+// Autobase (src/roomlog.mjs); every peer replicates it, so joining mid-match
+// backfills history instead of starting from a blank room.
+async function replayHistory (history) {
+  for (const entry of history) await onPeerMessage(entry)
+  if (history.length) pushUI({ t: 'system', text: `Synced ${history.length} earlier update${history.length === 1 ? '' : 's'} from room history` })
 }
 
 async function onPeerMessage (msg) {
+  // A message can arrive via live gossip AND (for late joiners) history replay.
+  if (msg.id && (msg.type === 'chat' || msg.type === 'voice' || msg.type === 'assistant' || msg.type === 'tip')) {
+    if (state.seenMsgIds.has(msg.id)) return
+    state.seenMsgIds.add(msg.id)
+  }
   switch (msg.type) {
     case 'chat': {
       let translated = null
@@ -85,7 +100,9 @@ async function onPeerMessage (msg) {
       pushUI({ t: 'reaction', from: msg.from, name: msg.name, emoji: msg.emoji })
       break
     case 'poll-create':
-      state.polls.set(msg.poll.id, { ...msg.poll, votes: new Map() })
+      // idempotent: history replay may re-deliver a poll-create after live
+      // votes already arrived — don't clobber the votes already recorded.
+      if (!state.polls.has(msg.poll.id)) state.polls.set(msg.poll.id, { ...msg.poll, votes: new Map() })
       pushPolls()
       break
     case 'poll-vote':
@@ -288,7 +305,8 @@ async function handleTip (ws, m) {
   try {
     const r = await wallet.tip(recipient, amount)
     pushUI({ t: 'toast', level: 'ok', text: `Tip sent · fee ${r.fee}` })
-    if (state.room) state.room.broadcast({ type: 'tip', from: state.room.me, name: state.profile.name, to: recipient, amount, hash: r.hash, explorer: r.explorer })
+    if (state.room) state.room.broadcast({ type: 'tip', id: r.hash, from: state.room.me, name: state.profile.name, to: recipient, amount, hash: r.hash, explorer: r.explorer })
+    state.seenMsgIds.add(r.hash) // the broadcast above won't loop back to us, but keep dedup state consistent
     pushUI({ t: 'tip', from: state.room?.me, name: state.profile.name, amount, hash: r.hash, explorer: r.explorer, to: recipient, self: true })
     ws.send(JSON.stringify({ t: 'balances', balances: await safeBalances() }))
   } catch (e) {
