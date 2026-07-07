@@ -65,7 +65,14 @@
         <button class="react" data-e="😭">😭</button>
       </div>
 
+      <div id="recBar" class="recbar hidden">
+        <span class="recdot">●</span> Recording voice note… <span id="recTimer">0:00</span>
+        <button id="recStop" class="btn small danger">■ Stop &amp; send</button>
+        <button id="recCancel" class="btn small">Cancel</button>
+      </div>
+
       <form id="composer" class="composer">
+        <button id="micBtn" type="button" class="btn mic" title="Record a voice note">🎙️</button>
         <input id="msg" class="input grow" placeholder="Type in your language…  (tip: /ask offside rule?)" autocomplete="off" />
         <button class="btn primary" type="submit">Send</button>
       </form>

@@ -1,7 +1,6 @@
 // TRACK QVAC — on-device AI through the QVAC SDK (no cloud APIs).
-// MVP surface: text translation via Bergamot NMT with English-pivot for pairs
-// that have no direct model. Voice-note transcription (whisper) and the match
-// assistant (Qwen completion) plug in here in Block 2.
+// Text translation via Bergamot NMT (English-pivot for pairs with no direct
+// model) and voice-note transcription via multilingual Whisper.
 
 import * as qvac from '@qvac/sdk'
 
@@ -62,5 +61,34 @@ export class AI {
       }
     }
     await Promise.allSettled(jobs)
+  }
+
+  // ---- speech-to-text (voice notes) ----
+  // Whisper's language hint is fixed at loadModel time, so cache one loaded
+  // model per spoken language (all WHISPER_BASE_Q8_0 — same ~150MB weights,
+  // different decode config; cheap to keep a couple resident during a demo).
+  _whisperModel (lang) {
+    const key = lang || 'auto'
+    if (!this._whisper) this._whisper = new Map()
+    if (!this._whisper.has(key)) {
+      this._whisper.set(key, qvac.loadModel({
+        modelSrc: qvac.WHISPER_BASE_Q8_0,
+        modelConfig: {
+          audio_format: 'f32le',
+          suppress_blank: true,
+          suppress_nst: true,
+          temperature: 0.0,
+          ...(lang ? { language: lang } : { detect_language: true })
+        }
+      }))
+    }
+    return this._whisper.get(key)
+  }
+
+  // audioFilePath must be a decoded PCM/WAV-family file (see src/voice.mjs).
+  async transcribe (audioFilePath, lang) {
+    const modelId = await this._whisperModel(lang)
+    const text = await qvac.transcribe({ modelId, audioChunk: audioFilePath })
+    return text.trim()
   }
 }

@@ -13,6 +13,7 @@ import { Room } from './p2p.mjs'
 import { AI } from './ai.mjs'
 import { Assistant } from './assistant.mjs'
 import { Wallet, CHAIN } from './wallet.mjs'
+import { base64ToWav, cleanup as cleanupWav, hasFfmpeg } from './voice.mjs'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const APP_DIR = path.join(__dirname, '..', 'app')
@@ -93,6 +94,9 @@ async function onPeerMessage (msg) {
     case 'assistant':
       await deliverAssistant(msg)
       break
+    case 'voice':
+      await deliverVoice(msg)
+      break
     case 'tip':
       pushUI({ t: 'tip', from: msg.from, name: msg.name, amount: msg.amount, hash: msg.hash, explorer: msg.explorer, to: msg.to })
       break
@@ -106,6 +110,38 @@ async function deliverAssistant (msg) {
     try { translated = await ai.translate(msg.text, msg.lang, state.profile.lang) } catch { translated = null }
   }
   pushUI({ t: 'assistant', from: msg.from, name: msg.name, question: msg.question, answer: msg.text, translated, ts: msg.ts })
+}
+
+// The sender transcribes on their own device (that's where the mic audio is);
+// each peer translates the transcript on their own device before display.
+async function deliverVoice (msg) {
+  let translated = null
+  if (msg.lang && msg.lang !== state.profile.lang) {
+    try { translated = await ai.translate(msg.text, msg.lang, state.profile.lang) } catch { translated = null }
+  }
+  pushUI({ t: 'voice', id: msg.id, from: msg.from, name: msg.name, lang: msg.lang, text: msg.text, translated, audio: msg.audio, mime: msg.mime, ts: msg.ts, self: msg.from === state.room?.me })
+}
+
+async function handleVoice (ws, m) {
+  if (!state.room) return
+  if (!(await hasFfmpeg())) return ws.send(JSON.stringify({ t: 'toast', level: 'error', text: 'ffmpeg not found — required to decode voice notes (see README).' }))
+  const audio = String(m.audio || '')
+  if (!audio) return
+  pushUI({ t: 'voice-pending', name: state.profile.name })
+  let wavPath
+  try {
+    wavPath = await base64ToWav(audio, 'webm')
+    const text = await ai.transcribe(wavPath, state.profile.lang)
+    if (!text) { pushUI({ t: 'voice-pending-clear' }); return ws.send(JSON.stringify({ t: 'toast', level: 'error', text: "Couldn't hear anything in that clip." })) }
+    const msg = { type: 'voice', id: crypto.randomBytes(6).toString('hex'), from: state.room.me, name: state.profile.name, lang: state.profile.lang, text, audio, mime: m.mime || 'audio/webm', ts: Date.now() }
+    state.room.broadcast(msg)
+    await deliverVoice(msg)
+  } catch (e) {
+    pushUI({ t: 'voice-pending-clear' })
+    pushUI({ t: 'toast', level: 'error', text: 'Voice note failed: ' + (e?.message || e) })
+  } finally {
+    await cleanupWav(wavPath)
+  }
 }
 
 async function handleAsk (question) {
@@ -226,6 +262,11 @@ async function handleUI (ws, m) {
       break
     }
 
+    case 'voice': {
+      await handleVoice(ws, m)
+      break
+    }
+
     case 'tip': {
       await handleTip(ws, m)
       break
@@ -273,9 +314,11 @@ wss.on('connection', (ws) => {
 
 await wallet.init()
 state.profile.address = wallet.address // share address so peers can tip us
+const ffmpegAvailable = await hasFfmpeg()
 server.listen(PORT, () => {
   console.log(`\n🏟️  FanCircle backend — user "${state.profile.name}" (${state.profile.lang})`)
   console.log(`   UI:     http://localhost:${PORT}`)
   console.log(`   Wallet: ${wallet.address} (${CHAIN.name})`)
-  console.log(`   USDT:   ${CHAIN.usdt || 'not configured (set FANCIRCLE_USDT to enable tipping)'}\n`)
+  console.log(`   USDT:   ${CHAIN.usdt || 'not configured (set FANCIRCLE_USDT to enable tipping)'}`)
+  console.log(`   Voice:  ${ffmpegAvailable ? 'ready (ffmpeg found)' : 'DISABLED — install ffmpeg to enable voice notes'}\n`)
 })

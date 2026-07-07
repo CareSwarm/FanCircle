@@ -5,6 +5,7 @@
 //   NAME=Alex LANG_CODE=en PORT=8081 WALLET_DIR=.wallet/alex node src/backend.mjs
 
 import WebSocket from 'ws'
+import fs from 'fs'
 
 function client (port) {
   const ws = new WebSocket(`ws://localhost:${port}`)
@@ -90,6 +91,22 @@ async function main () {
   console.log('  assistant answer (en):', aAlex.answer)
   console.log('  Minh (vi) sees      :', aMinh.translated || aMinh.answer)
   check(!!aAlex.answer && /30|minute/i.test(aAlex.answer), 'QVAC LLM: on-device match assistant answered + shared to room + translated')
+
+  // 3.7) QVAC speech-to-text — Alex sends a voice note; Minh gets transcript + translation
+  const sampleWebm = process.env.VOICE_SAMPLE // path to a webm/opus clip; skip if unset
+  if (sampleWebm && fs.existsSync(sampleWebm)) {
+    console.log('\n  Alex sends a voice note…')
+    const audio = fs.readFileSync(sampleWebm).toString('base64')
+    alex.send({ t: 'voice', audio, mime: 'audio/webm' })
+    const vAlex = await alex.wait((m) => m.t === 'voice', 30000)
+    const vMinh = await minh.wait((m) => m.t === 'voice', 30000)
+    console.log('  transcript (en):', vAlex.text)
+    console.log('  Minh (vi) sees :', vMinh.translated || vMinh.text)
+    check(!!vAlex.text && /win|norway|england|final/i.test(vAlex.text), 'QVAC STT: voice note transcribed on-device')
+    check(!!vMinh.translated && vMinh.translated !== vMinh.text, 'QVAC: voice transcript translated + shared to room over Pears')
+  } else {
+    console.log('\n  (skipping voice-note test — set VOICE_SAMPLE=/path/to/clip.webm to include it)')
+  }
 
   // 4) WDK — Alex tips Minh (only when wallets are funded, i.e. local-chain mode)
   const minhReady = minh.latest((m) => m.t === 'ready')

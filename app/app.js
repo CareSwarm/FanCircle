@@ -37,6 +37,9 @@ function handle (m) {
     case 'tip': renderTip(m); break
     case 'assistant-pending': renderAssistantPending(m); break
     case 'assistant': renderAssistant(m); break
+    case 'voice-pending': renderVoicePending(m); break
+    case 'voice-pending-clear': if (voicePendingEl) { voicePendingEl.remove(); voicePendingEl = null }; break
+    case 'voice': renderVoice(m); break
     case 'system': addSystem(m.text); break
     case 'toast': toast(m.text, m.level); break
   }
@@ -118,6 +121,80 @@ function floatReaction (emoji) {
   s.style.bottom = '120px'
   layer.appendChild(s)
   setTimeout(() => s.remove(), 2400)
+}
+
+// ---------- voice notes ----------
+const MAX_RECORD_MS = 20000
+let mediaRecorder = null, recordedChunks = [], recordTimer = null, recordStart = 0
+let voicePendingEl = null
+
+async function startRecording () {
+  if (mediaRecorder) return
+  if (!navigator.mediaDevices?.getUserMedia) return toast('Microphone not available in this browser', 'error')
+  let stream
+  try { stream = await navigator.mediaDevices.getUserMedia({ audio: true }) } catch { return toast('Microphone permission denied', 'error') }
+  recordedChunks = []
+  const mime = ['audio/webm;codecs=opus', 'audio/webm', 'audio/ogg;codecs=opus'].find((t) => window.MediaRecorder?.isTypeSupported?.(t)) || ''
+  mediaRecorder = new MediaRecorder(stream, mime ? { mimeType: mime } : undefined)
+  mediaRecorder.ondataavailable = (e) => { if (e.data.size > 0) recordedChunks.push(e.data) }
+  mediaRecorder.onstop = () => { stream.getTracks().forEach((t) => t.stop()) }
+  mediaRecorder.start()
+  recordStart = Date.now()
+  $('micBtn').classList.add('active')
+  $('recBar').classList.remove('hidden')
+  recordTimer = setInterval(() => {
+    const s = Math.floor((Date.now() - recordStart) / 1000)
+    $('recTimer').textContent = `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`
+    if (s * 1000 >= MAX_RECORD_MS) stopRecording(true)
+  }, 250)
+}
+
+function stopRecording (send_) {
+  if (!mediaRecorder) return
+  const mime = mediaRecorder.mimeType || 'audio/webm'
+  const finish = () => {
+    clearInterval(recordTimer); recordTimer = null
+    $('micBtn').classList.remove('active')
+    $('recBar').classList.add('hidden')
+    $('recTimer').textContent = '0:00'
+    mediaRecorder = null
+    if (send_ && recordedChunks.length) {
+      const blob = new Blob(recordedChunks, { type: mime })
+      const reader = new FileReader()
+      reader.onload = () => {
+        const b64 = reader.result.split(',')[1]
+        send({ t: 'voice', audio: b64, mime })
+      }
+      reader.readAsDataURL(blob)
+    }
+    recordedChunks = []
+  }
+  mediaRecorder.addEventListener('stop', finish, { once: true })
+  mediaRecorder.stop()
+}
+
+$('micBtn').addEventListener('click', () => { mediaRecorder ? stopRecording(true) : startRecording() })
+$('recStop').addEventListener('click', () => stopRecording(true))
+$('recCancel').addEventListener('click', () => stopRecording(false))
+
+function renderVoicePending (m) {
+  const stick = atBottom()
+  voicePendingEl = el('div', 'msg voice')
+  voicePendingEl.innerHTML = `<div class="vhead"><span class="nm">${esc(m.name)}</span></div><div class="thinking">🎙️ transcribing on-device…</div>`
+  chat.appendChild(voicePendingEl)
+  if (stick) scroll()
+}
+function renderVoice (m) {
+  if (voicePendingEl) { voicePendingEl.remove(); voicePendingEl = null }
+  const stick = atBottom()
+  const d = el('div', 'msg voice' + (m.self ? ' self' : ''))
+  let html = `<div class="vhead"><span class="nm">${esc(m.name)}</span> <span class="lg">${esc(m.lang || '')}</span> 🎙️</div>`
+  if (m.audio) html += `<audio controls src="data:${esc(m.mime || 'audio/webm')};base64,${m.audio}"></audio>`
+  html += `<div class="orig">${esc(m.text)}</div>`
+  if (m.translated && m.translated !== m.text) html += `<div class="trans">${esc(m.translated)}</div>`
+  d.innerHTML = html
+  chat.appendChild(d)
+  if (stick) scroll()
 }
 
 // ---------- tips ----------
