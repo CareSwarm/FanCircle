@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>FanCircle — P2P Watch Party</title>
+  <link rel="stylesheet" href="/style.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand"><span class="logo">🏟️</span> FanCircle</div>
+    <div class="me">
+      <input id="name" class="name-input" maxlength="24" placeholder="your name" />
+      <select id="lang" class="lang-select" title="Your language"></select>
+    </div>
+    <div class="wallet" id="wallet">
+      <div class="w-line"><span class="w-label">wallet</span> <span id="addr" class="addr">…</span></div>
+      <div class="w-line"><span id="bal" class="bal">— USD₮</span> <button id="refresh" class="mini" title="Refresh balance">⟳</button></div>
+    </div>
+  </header>
+
+  <main class="layout">
+    <aside class="side">
+      <section class="card">
+        <h3>Room</h3>
+        <button id="createRoom" class="btn primary">＋ Create room</button>
+        <div class="joinrow">
+          <input id="joinInput" class="input" placeholder="paste room link" />
+          <button id="joinRoom" class="btn">Join</button>
+        </div>
+        <div id="roomInfo" class="roominfo hidden">
+          <div class="muted small">Share this link so fans can join:</div>
+          <div class="linkrow"><code id="roomLink" class="roomlink"></code><button id="copyLink" class="mini">copy</button></div>
+        </div>
+      </section>
+
+      <section class="card">
+        <h3>Fans in room <span id="memberCount" class="pill">0</span></h3>
+        <ul id="members" class="members"></ul>
+      </section>
+
+      <section class="card">
+        <h3>Prediction polls</h3>
+        <div id="polls" class="polls"></div>
+        <button id="newPoll" class="btn small">＋ New poll</button>
+      </section>
+    </aside>
+
+    <section class="main">
+      <div id="matchbar" class="matchbar">
+        <span class="live">● LIVE</span>
+        <span id="matchTitle">No room yet — create one or join with a link</span>
+      </div>
+
+      <div id="chat" class="chat">
+        <div class="empty" id="chatEmpty">Messages you send are translated on-device into each fan's language. Create or join a room to start.</div>
+      </div>
+
+      <div class="reactions" id="reactions">
+        <button class="react" data-e="⚽">⚽</button>
+        <button class="react" data-e="🔥">🔥</button>
+        <button class="react" data-e="😱">😱</button>
+        <button class="react" data-e="🎉">🎉</button>
+        <button class="react" data-e="👏">👏</button>
+        <button class="react" data-e="😭">😭</button>
+      </div>
+
+      <form id="composer" class="composer">
+        <input id="msg" class="input grow" placeholder="Type in your language…" autocomplete="off" />
+        <button class="btn primary" type="submit">Send</button>
+      </form>
+    </section>
+  </main>
+
+  <div id="reactionLayer" class="reaction-layer"></div>
+  <div id="toasts" class="toasts"></div>
+
+  <!-- Tip modal -->
+  <div id="tipModal" class="modal hidden">
+    <div class="modal-card">
+      <h3>Tip <span id="tipName"></span> in USD₮</h3>
+      <div class="muted small">Self-custodial transfer on <span id="tipChain">Sepolia</span>. Recipient:</div>
+      <code id="tipAddr" class="roomlink"></code>
+      <div class="tiprow">
+        <button class="chip" data-amt="1">1</button>
+        <button class="chip" data-amt="5">5</button>
+        <button class="chip" data-amt="10">10</button>
+        <input id="tipAmt" class="input" type="number" min="0" step="0.1" value="1" />
+        <span>USD₮</span>
+      </div>
+      <div class="modal-actions">
+        <button id="tipCancel" class="btn">Cancel</button>
+        <button id="tipSend" class="btn primary">Send tip</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Poll modal -->
+  <div id="pollModal" class="modal hidden">
+    <div class="modal-card">
+      <h3>New prediction poll</h3>
+      <input id="pollQ" class="input" placeholder="e.g. Who wins tonight?" />
+      <input id="pollO1" class="input" placeholder="Option 1" />
+      <input id="pollO2" class="input" placeholder="Option 2" />
+      <input id="pollO3" class="input" placeholder="Option 3 (optional)" />
+      <input id="pollO4" class="input" placeholder="Option 4 (optional)" />
+      <div class="modal-actions">
+        <button id="pollCancel" class="btn">Cancel</button>
+        <button id="pollCreate" class="btn primary">Create</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="/app.js"></script>
+</body>
+</html>

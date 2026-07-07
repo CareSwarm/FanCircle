@@ -1,0 +1,90 @@
+// End-to-end golden-path test across TWO running backends (two users).
+// Proves: Pears room join + QVAC cross-language translation + poll tally.
+// Requires both backends running:
+//   NAME=Minh LANG_CODE=vi PORT=8080 WALLET_DIR=.wallet/minh node src/backend.mjs
+//   NAME=Alex LANG_CODE=en PORT=8081 WALLET_DIR=.wallet/alex node src/backend.mjs
+
+import WebSocket from 'ws'
+
+function client (port) {
+  const ws = new WebSocket(`ws://localhost:${port}`)
+  const inbox = []
+  const waiters = []
+  ws.on('message', (d) => {
+    const m = JSON.parse(d)
+    inbox.push(m)
+    for (let i = waiters.length - 1; i >= 0; i--) {
+      if (waiters[i].pred(m)) { waiters[i].resolve(m); waiters.splice(i, 1) }
+    }
+  })
+  return {
+    ws, inbox,
+    ready: () => new Promise((r) => ws.on('open', r)),
+    send: (o) => ws.send(JSON.stringify(o)),
+    wait: (pred, ms = 15000) => new Promise((resolve, reject) => {
+      const hit = inbox.find(pred); if (hit) return resolve(hit)
+      const w = { pred, resolve }; waiters.push(w)
+      setTimeout(() => reject(new Error('timeout waiting for ' + pred)), ms)
+    }),
+    latest: (pred) => { for (let i = inbox.length - 1; i >= 0; i--) if (pred(inbox[i])) return inbox[i]; return null }
+  }
+}
+
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms))
+let failed = false
+function check (cond, label) { console.log(`${cond ? '✅' : '❌'} ${label}`); if (!cond) failed = true }
+
+async function main () {
+  const minh = client(8080)
+  const alex = client(8081)
+  await Promise.all([minh.ready(), alex.ready()])
+  minh.send({ t: 'init' }); alex.send({ t: 'init' })
+  await Promise.all([minh.wait((m) => m.t === 'ready'), alex.wait((m) => m.t === 'ready')])
+  console.log('both users ready\n')
+
+  // 1) PEARS — Minh creates a room, Alex joins by link
+  minh.send({ t: 'create-room' })
+  const room = await minh.wait((m) => m.t === 'room')
+  console.log('room topic:', room.topic.slice(0, 16) + '…')
+  alex.send({ t: 'join-room', topic: room.topic })
+
+  // both should see 2 members
+  const minhMembers = await minh.wait((m) => m.t === 'members' && m.list.length === 2)
+  const alexMembers = await alex.wait((m) => m.t === 'members' && m.list.length === 2)
+  check(minhMembers.list.length === 2 && alexMembers.list.length === 2, 'PEARS: peers discovered each other, room has 2 members')
+
+  // 2) QVAC — Minh writes Vietnamese, Alex must receive an English translation
+  minh.send({ t: 'chat', text: 'Ai sẽ thắng trận bán kết tối nay?' })
+  const atAlex = await alex.wait((m) => m.t === 'chat' && !m.self && m.lang === 'vi')
+  console.log(`  Minh(vi): "${atAlex.text}"`)
+  console.log(`  → Alex sees: "${atAlex.translated}"`)
+  check(!!atAlex.translated && /win|semi|tonight|who/i.test(atAlex.translated), 'QVAC: vi→en translation delivered to English user')
+
+  // reverse direction
+  alex.send({ t: 'chat', text: 'I think Norway will win tonight.' })
+  const atMinh = await minh.wait((m) => m.t === 'chat' && !m.self && m.lang === 'en')
+  console.log(`  Alex(en): "${atMinh.text}"`)
+  console.log(`  → Minh sees: "${atMinh.translated}"`)
+  check(!!atMinh.translated && atMinh.translated !== atMinh.text, 'QVAC: en→vi translation delivered to Vietnamese user')
+
+  // 3) PEARS — poll create + votes converge on both sides
+  minh.send({ t: 'poll-create', question: 'Who wins?', options: ['Norway', 'England'] })
+  await alex.wait((m) => m.t === 'polls' && m.polls.length === 1)
+  const poll = (await minh.wait((m) => m.t === 'polls' && m.polls.length === 1)).polls[0]
+  minh.send({ t: 'poll-vote', pollId: poll.id, optionIndex: 0 }) // Minh -> Norway
+  alex.send({ t: 'poll-vote', pollId: poll.id, optionIndex: 1 }) // Alex -> England
+  await sleep(2000)
+  const finalPollMinh = minh.latest((m) => m.t === 'polls' && m.polls.length).polls[0]
+  const finalPollAlex = alex.latest((m) => m.t === 'polls' && m.polls.length).polls[0]
+  console.log('  tally (Minh view):', finalPollMinh.tally, 'total', finalPollMinh.total)
+  console.log('  tally (Alex view):', finalPollAlex.tally, 'total', finalPollAlex.total)
+  check(finalPollMinh.total === 2 && finalPollAlex.total === 2 &&
+    finalPollMinh.tally[0] === 1 && finalPollMinh.tally[1] === 1,
+  'PEARS: poll votes gossiped + tallied identically on both peers')
+
+  console.log('\n' + (failed ? '❌ E2E FAILED' : '✅ E2E PASSED — golden path (Pears + QVAC) works across two peers'))
+  minh.ws.close(); alex.ws.close()
+  process.exit(failed ? 1 : 0)
+}
+
+main().catch((e) => { console.error('❌ E2E ERROR:', e.message); process.exit(1) })
