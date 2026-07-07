@@ -12,6 +12,7 @@
     "spike:qvac": "node spikes/spike-qvac.mjs",
     "spike:wdk": "node spikes/spike-wdk.mjs",
     "e2e": "node spikes/e2e.mjs",
+    "chain:setup": "node scripts/setup-local-chain.mjs",
     "start": "node src/backend.mjs",
     "demo:minh": "NAME=Minh LANG_CODE=vi PORT=8080 WALLET_DIR=.wallet/minh node src/backend.mjs",
     "demo:alex": "NAME=Alex LANG_CODE=en PORT=8081 WALLET_DIR=.wallet/alex node src/backend.mjs"

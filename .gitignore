@@ -17,3 +17,7 @@ seed.txt
 *.seed
 # Hackathon rules doc (not project code)
 TETHER DEVELOPERS CUP *.docx
+# Foundry build artifacts (local-chain demo)
+chain/out/
+chain/cache/
+chain/broadcast/

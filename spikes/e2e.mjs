@@ -82,7 +82,23 @@ async function main () {
     finalPollMinh.tally[0] === 1 && finalPollMinh.tally[1] === 1,
   'PEARS: poll votes gossiped + tallied identically on both peers')
 
-  console.log('\n' + (failed ? '❌ E2E FAILED' : '✅ E2E PASSED — golden path (Pears + QVAC) works across two peers'))
+  // 4) WDK — Alex tips Minh (only when wallets are funded, i.e. local-chain mode)
+  const minhReady = minh.latest((m) => m.t === 'ready')
+  const alexBal = alex.latest((m) => m.t === 'balances')
+  const canTip = process.env.FANCIRCLE_CHAIN === 'local' && minhReady?.chain?.usdtConfigured && (alexBal?.balances?.usdt > 0)
+  if (canTip) {
+    const minhAddr = minhReady.address
+    console.log('\n  Alex tips Minh 3 USD₮ →', minhAddr)
+    alex.send({ t: 'tip', recipient: minhAddr, amount: 3 })
+    const tipMsg = await alex.wait((m) => m.t === 'tip', 30000)
+    console.log('  tx:', tipMsg.hash)
+    const minhTip = await minh.wait((m) => m.t === 'tip' && m.hash === tipMsg.hash, 30000)
+    check(!!tipMsg.hash && !!minhTip, 'WDK: on-chain USD₮ tip sent + announced to the room over Pears')
+  } else {
+    console.log('\n  (skipping WDK tip test — run with FANCIRCLE_CHAIN=local after `npm run chain:setup` to include it)')
+  }
+
+  console.log('\n' + (failed ? '❌ E2E FAILED' : '✅ E2E PASSED — golden path works across two peers'))
   minh.ws.close(); alex.ws.close()
   process.exit(failed ? 1 : 0)
 }

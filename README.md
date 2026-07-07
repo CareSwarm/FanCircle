@@ -69,7 +69,24 @@ Each fan gets a **self-custodial** BIP-39 wallet via `@tetherto/wdk` + `@tethert
 
 ---
 
-## Enabling USD₮ tipping (one-time faucet setup)
+## Enabling USD₮ tipping
+
+The chat + translation demo above needs no blockchain. To also demo **tipping**, pick one path:
+
+### Option A — Local chain, zero faucet (fastest for judges)
+
+Requires [Foundry](https://getfoundry.sh) (`anvil`, `forge`). Three terminals:
+
+```bash
+anvil                                       # terminal A: local EVM
+npm run chain:setup                         # terminal B: deploy mock USD₮, fund both wallets
+FANCIRCLE_CHAIN=local npm run demo:minh     # terminal C
+FANCIRCLE_CHAIN=local npm run demo:alex     # terminal D
+```
+
+Both wallets start with 1000 USD₮; the **💸 tip** button now sends a real transfer on the local chain (verify the sender's balance drops). No faucet, no accounts.
+
+### Option B — Sepolia public testnet (real, Etherscan-verifiable)
 
 Tipping needs a funded wallet and the test-USD₮ contract address. Print your two demo wallet addresses:
 
