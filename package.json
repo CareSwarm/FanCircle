@@ -1,0 +1,31 @@
+{
+  "name": "fancircle",
+  "version": "0.1.0",
+  "description": "FanCircle — peer-to-peer, multilingual World Cup watch-party rooms with on-device AI translation and self-custodial USDT tipping. Built on Pears (Hyperswarm), QVAC, and WDK.",
+  "type": "module",
+  "license": "Apache-2.0",
+  "engines": {
+    "node": ">=22.17"
+  },
+  "scripts": {
+    "spike:p2p": "node spikes/spike-p2p.mjs",
+    "spike:qvac": "node spikes/spike-qvac.mjs",
+    "spike:wdk": "node spikes/spike-wdk.mjs",
+    "e2e": "node spikes/e2e.mjs",
+    "start": "node src/backend.mjs",
+    "demo:minh": "NAME=Minh LANG_CODE=vi PORT=8080 WALLET_DIR=.wallet/minh node src/backend.mjs",
+    "demo:alex": "NAME=Alex LANG_CODE=en PORT=8081 WALLET_DIR=.wallet/alex node src/backend.mjs"
+  },
+  "dependencies": {
+    "@qvac/sdk": "^0.14.1",
+    "@tetherto/wdk": "^1.0.0-beta.13",
+    "@tetherto/wdk-wallet-evm": "^1.0.0-beta.15",
+    "autobase": "7.28.1",
+    "b4a": "^1.8.1",
+    "corestore": "7.11.0",
+    "hyperbee": "2.27.3",
+    "hypercore-crypto": "^3.7.0",
+    "hyperswarm": "^4.17.0",
+    "ws": "^8.18.0"
+  }
+}

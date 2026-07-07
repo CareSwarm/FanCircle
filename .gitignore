@@ -1,0 +1,19 @@
+node_modules/
+dist/
+*.log
+.DS_Store
+.env
+.env.*
+# Pear/Bare local storage
+.pear/
+pear-storage/
+# QVAC downloaded models (multi-GB — never commit)
+models/
+*.gguf
+*.bin
+# Local wallet secrets — NEVER commit
+.wallet/
+seed.txt
+*.seed
+# Hackathon rules doc (not project code)
+TETHER DEVELOPERS CUP *.docx
