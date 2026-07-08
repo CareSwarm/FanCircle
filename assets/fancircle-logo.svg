@@ -1,0 +1,76 @@
+<svg viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <radialGradient id="bg" cx="32%" cy="18%" r="95%">
+      <stop offset="0%" stop-color="#16294a"/>
+      <stop offset="55%" stop-color="#0e1830"/>
+      <stop offset="100%" stop-color="#0b1220"/>
+    </radialGradient>
+    <linearGradient id="brand" x1="10%" y1="0%" x2="90%" y2="100%">
+      <stop offset="0%" stop-color="#22d37f"/>
+      <stop offset="100%" stop-color="#14b8a6"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#22d37f" stop-opacity="0.35"/>
+      <stop offset="100%" stop-color="#22d37f" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <!-- app-icon style rounded-square backdrop, matches the product's own dark theme -->
+  <rect x="0" y="0" width="512" height="512" rx="112" fill="url(#bg)"/>
+  <rect x="0" y="0" width="512" height="512" rx="112" fill="none" stroke="#24365c" stroke-width="2"/>
+
+  <!-- soft glow behind the mark -->
+  <circle cx="256" cy="256" r="200" fill="url(#glow)"/>
+
+  <!-- P2P mesh ring: 8 peers, connected directly to each other (no center hub) -->
+  <g stroke="#3a507e" stroke-width="2.5" opacity="0.85" fill="none">
+    <!-- octagon ring -->
+    <polygon points="256,81 379.7,132.3 431,256 379.7,379.7 256,431 132.3,379.7 81,256 132.3,132.3" />
+    <!-- cross-mesh connections -->
+    <line x1="256" y1="81" x2="379.7" y2="379.7"/>
+    <line x1="431" y1="256" x2="132.3" y2="379.7"/>
+    <line x1="256" y1="431" x2="132.3" y2="132.3"/>
+    <line x1="81" y1="256" x2="379.7" y2="132.3"/>
+  </g>
+
+  <!-- 8 peer nodes -->
+  <g fill="url(#brand)">
+    <circle cx="256" cy="81" r="13"/>
+    <circle cx="379.7" cy="132.3" r="13"/>
+    <circle cx="431" cy="256" r="13"/>
+    <circle cx="379.7" cy="379.7" r="13"/>
+    <circle cx="256" cy="431" r="13"/>
+    <circle cx="132.3" cy="379.7" r="13"/>
+    <circle cx="81" cy="256" r="13"/>
+    <circle cx="132.3" cy="132.3" r="13"/>
+  </g>
+  <g fill="#e8eefc" opacity="0.55">
+    <circle cx="256" cy="81" r="4.5"/>
+    <circle cx="379.7" cy="132.3" r="4.5"/>
+    <circle cx="431" cy="256" r="4.5"/>
+    <circle cx="379.7" cy="379.7" r="4.5"/>
+    <circle cx="256" cy="431" r="4.5"/>
+    <circle cx="132.3" cy="379.7" r="4.5"/>
+    <circle cx="81" cy="256" r="4.5"/>
+    <circle cx="132.3" cy="132.3" r="4.5"/>
+  </g>
+
+  <!-- center: a football, on-brand instead of literal black/white -->
+  <g transform="translate(256,256)">
+    <circle r="86" fill="#0b1220"/>
+    <circle r="86" fill="url(#brand)" opacity="0.14"/>
+    <circle r="86" fill="none" stroke="url(#brand)" stroke-width="4"/>
+    <circle r="80" fill="none" stroke="#e8eefc" stroke-width="2" opacity="0.18"/>
+
+    <!-- pentagon + radiating seams, classic flat soccer-ball glyph -->
+    <polygon points="0,-27 25.7,-8.3 15.9,21.9 -15.9,21.9 -25.7,-8.3"
+             fill="#0b1220" stroke="#e8eefc" stroke-width="2.5" stroke-linejoin="round"/>
+    <g stroke="#e8eefc" stroke-width="2.5" stroke-linecap="round" opacity="0.9">
+      <line x1="0" y1="-27" x2="0" y2="-70"/>
+      <line x1="25.7" y1="-8.3" x2="66.9" y2="-21.8"/>
+      <line x1="15.9" y1="21.9" x2="41.4" y2="57.1"/>
+      <line x1="-15.9" y1="21.9" x2="-41.4" y2="57.1"/>
+      <line x1="-25.7" y1="-8.3" x2="-66.9" y2="-21.8"/>
+    </g>
+  </g>
+</svg>
