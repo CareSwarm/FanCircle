@@ -19,6 +19,7 @@
     "demo:sam": "NAME=Sam LANG_CODE=es PORT=8082 WALLET_DIR=.wallet/sam node src/backend.mjs"
   },
   "dependencies": {
+    "@qvac/langdetect-text": "^0.1.2",
     "@qvac/sdk": "^0.14.1",
     "@tetherto/wdk": "^1.0.0-beta.13",
     "@tetherto/wdk-wallet-evm": "^1.0.0-beta.15",

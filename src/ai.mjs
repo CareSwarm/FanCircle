@@ -3,10 +3,24 @@
 // through the QVAC SDK, no cloud calls.
 
 import * as qvac from '@qvac/sdk'
+import { detectOne } from '@qvac/langdetect-text'
 
 // All Bergamot models are English-centric (X<->EN). Non-English X->Y pivots through EN.
 function pairConst (from, to) {
   return qvac['BERGAMOT_' + from.toUpperCase() + '_' + to.toUpperCase()]
+}
+
+// The caller's `from` is a UI setting (the sender's chosen profile language),
+// not a guarantee of what they actually typed — someone with their profile
+// set to Vietnamese typing in English is a real, common case, not an edge
+// case. Translating already-English text as if it were Vietnamese produces
+// nonsense (confirmed: "offside rule?" -> "Outside the rules?"), so detect
+// the real language of the text and prefer that over the declared one.
+function detectLang (text) {
+  try {
+    const r = detectOne(text)
+    return r?.code && r.code !== 'und' ? r.code : null
+  } catch { return null }
 }
 
 // QVAC's model registry is one shared cache per machine (RocksDB-backed),
@@ -69,8 +83,11 @@ export class AI {
 
   // Translate text from -> to, pivoting through English when needed.
   async translate (text, from, to) {
-    if (!text || from === to) return text
+    if (!text) return text
     from = from.toLowerCase(); to = to.toLowerCase()
+    const detected = detectLang(text)
+    if (detected && detected !== from) from = detected
+    if (from === to) return text
     // direct pair?
     if (pairConst(from, to)) return this._translateDirect(text, from, to)
     // pivot through english

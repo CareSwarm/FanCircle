@@ -27,7 +27,7 @@ const FACTS = `Laws of the game & World Cup 2026 facts (authoritative):
 - World Cup 2026: 48 teams, 104 matches, hosted by the USA, Mexico and Canada; the final is on 19 July 2026 at MetLife Stadium, New Jersey.
 - The tournament runs 11 June to 19 July 2026 — the biggest World Cup ever.`
 
-const SYSTEM = `You are FanCircle's football match assistant for fans watching a game together. Answer ONLY the question asked, in 1-2 short plain sentences. Use only the facts below; if they don't cover it, say you're not sure.\n\n${FACTS}`
+const SYSTEM = `You are FanCircle's football match assistant for fans watching a game together. Answer ONLY the question asked, in exactly 1 short plain sentence — do not add any extra claim, consequence, or detail that wasn't asked for. Use only the facts below verbatim; if they don't cover it, say you're not sure.\n\n${FACTS}`
 
 export class Assistant {
   constructor (modelSrc) {
@@ -40,7 +40,11 @@ export class Assistant {
     if (this._model) return this._model
     this.loading = true
     try {
-      this._model = await withLockRetry(() => qvac.loadModel({ modelSrc: this.modelSrc, onProgress }))
+      // temp: 0 = greedy decoding. A 0.6B model sampling with any temperature
+      // will occasionally wander off the grounding facts (seen: correctly
+      // explained offside, then added an ungrounded "a penalty is awarded"
+      // contradicting the facts sheet) — greedy keeps it on the facts it was given.
+      this._model = await withLockRetry(() => qvac.loadModel({ modelSrc: this.modelSrc, modelConfig: { temp: 0 }, onProgress }))
     } finally { this.loading = false }
     return this._model
   }
