@@ -7,6 +7,14 @@ const shortAddr = (a) => a ? a.slice(0, 6) + '…' + a.slice(-4) : '—'
 let ws, me = null, myProfile = { name: '', lang: 'en' }, chain = {}, members = [], myAddr = null
 let tipTarget = null
 
+// Language -> flag, for a quick visual "who's in the room" read.
+const FLAGS = { vi: '🇻🇳', en: '🇺🇸', es: '🇪🇸', pt: '🇵🇹', ar: '🇸🇦', fr: '🇫🇷', de: '🇩🇪', ja: '🇯🇵', ko: '🇰🇷' }
+const flag = (lang) => FLAGS[lang] || ''
+
+// A real, confirmed World Cup 2026 knockout fixture — not live scoring (no
+// live-match data source wired up), just honest context for the room.
+const FIXTURE = '🇳🇴 Norway vs England 🇬🇧 · Quarter-Final · Sat July 11, 21:00 UTC'
+
 function connect () {
   ws = new WebSocket(`ws://${location.host}`)
   ws.onopen = () => send({ t: 'init' })
@@ -70,7 +78,8 @@ function showRoom (topic) {
   $('roomInfo').classList.remove('hidden')
   $('roomLink').textContent = topic
   $('chatEmpty')?.remove()
-  $('matchTitle').textContent = 'Watch party live · fans chatting in their own language'
+  $('matchTitle').textContent = FIXTURE
+  $('liveBadge').classList.remove('hidden')
 }
 $('copyLink').addEventListener('click', () => { navigator.clipboard?.writeText($('roomLink').textContent); toast('Room link copied', 'ok') })
 
@@ -81,7 +90,7 @@ function renderMembers () {
     const li = el('li', 'member')
     li.appendChild(el('span', 'dot'))
     li.appendChild(el('span', 'who', esc(mem.profile.name) + (mem.self ? ' <span class="lng">(you)</span>' : '')))
-    li.appendChild(el('span', 'lng', mem.profile.lang.toUpperCase()))
+    li.appendChild(el('span', 'lng', `${flag(mem.profile.lang)} ${mem.profile.lang.toUpperCase()}`))
     if (!mem.self) {
       const tip = el('span', 'tip')
       const b = el('button', 'tip-btn', '💸 tip')
@@ -100,7 +109,7 @@ function renderChat (m) {
   const stick = atBottom()
   const d = el('div', 'msg' + (m.self ? ' self' : ''))
   if (m.id) d.dataset.mid = m.id
-  const head = el('div', 'head', `<span class="nm">${esc(m.name)}</span> <span class="lg">${esc(m.lang || '')}</span>`)
+  const head = el('div', 'head', `<span class="nm">${esc(m.name)}</span> <span class="lg">${flag(m.lang)} ${esc(m.lang || '')}</span>`)
   d.appendChild(head)
   d.appendChild(el('div', 'orig', esc(m.text)))
   if (m.translated && m.translated !== m.text) {
@@ -203,7 +212,7 @@ function renderVoice (m) {
   if (voicePendingEl) { voicePendingEl.remove(); voicePendingEl = null }
   const stick = atBottom()
   const d = el('div', 'msg voice' + (m.self ? ' self' : ''))
-  let html = `<div class="vhead"><span class="nm">${esc(m.name)}</span> <span class="lg">${esc(m.lang || '')}</span> 🎙️</div>`
+  let html = `<div class="vhead"><span class="nm">${esc(m.name)}</span> <span class="lg">${flag(m.lang)} ${esc(m.lang || '')}</span> 🎙️</div>`
   if (m.audio) html += `<audio controls src="data:${esc(m.mime || 'audio/webm')};base64,${m.audio}"></audio>`
   html += `<div class="orig">${esc(m.text)}</div>`
   if (m.translated && m.translated !== m.text) html += `<div class="trans">${esc(m.translated)}</div>`
