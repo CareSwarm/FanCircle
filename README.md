@@ -2,7 +2,7 @@
   <img src="assets/fancircle-logo-512.png" width="140" alt="FanCircle logo" />
 </p>
 
-# 🏟️ FanCircle
+# FanCircle
 
 A peer to peer World Cup watch party. No server, no account. Fans chat, react, and predict scores over a raw Hyperswarm connection, in their own language, and tip each other USDT straight from their own wallet.
 
