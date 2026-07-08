@@ -16,7 +16,7 @@ Built for the **Tether Developers Cup**, entering all three tracks:
 
 ---
 
-## Quick start (judges: run it in ~2 minutes)
+## Quick start
 
 **Prerequisites:** [Node.js](https://nodejs.org) **≥ 22.17** (`node -v` to check). macOS / Linux / Windows. [ffmpeg](https://ffmpeg.org) is optional — only needed for voice notes; everything else works without it.
 
@@ -25,6 +25,8 @@ git clone <this-repo>
 cd FanCircle
 npm install
 ```
+
+> **Start `npm install` before you sit down to judge this.** QVAC ships prebuilt native inference binaries for every platform it supports (macOS/Linux/Windows × arm64/x64, plus mobile) in one monolithic SDK — `node_modules` ends up around **5.5 GB** even though FanCircle only uses three of the ~12 model families in there. On typical wifi that's **10–30 minutes**, not seconds. Once it's done, everything below really is fast — this is a one-time cost.
 
 Open **two terminals** to play two fans on one machine:
 
@@ -44,10 +46,10 @@ Now open **http://localhost:8080** and **http://localhost:8081** in two browser 
 4. Click **＋ New poll** to run a prediction poll; both fans vote and tallies sync peer-to-peer.
 5. Type **`/ask offside rule?`** (or any football question) — a small LLM answers **on your device**, and the answer is shared to the room in everyone's language.
 6. Click **🎙️** to record a short voice note. It's transcribed **on your device** (Whisper), sent to the room, and each fan sees it translated into their own language, with the original audio playable. *(Needs [ffmpeg](https://ffmpeg.org) installed — `brew install ffmpeg` / `apt install ffmpeg`; the backend logs whether it found it on boot.)*
-7. Click **💸 tip** next to a fan to send USD₮ *(needs one-time setup — see below)*.
+7. Click **💸 tip** next to a fan to send USD₮ — **this needs the one-time setup in "Enabling USD₮ tipping" below first** (a funded Sepolia wallet, or the zero-faucet local-chain mode, which needs [Foundry](https://getfoundry.sh) and two more terminals); skip that and the button is there but there's nothing to send yet.
 8. **The best proof in the repo — a fan joining mid-match:** open a third terminal, `npm run demo:sam` (→ http://localhost:8082), paste the same room link, and Join. Sam wasn't there for any of the above — no server ever stored it — but the room's Autobase log replicates to him, and you'll see a green **⏪ Synced N updates** banner land with full chat history *and* the correct poll tally, translated straight into Spanish. This is the hardest engineering in the repo (`src/roomlog.mjs`, proven end-to-end in `spikes/spike-lateJoiner.mjs`) and it's easy to miss if you stop at step 7.
 
-> **First translation downloads a model.** The first time a language pair is used, QVAC fetches a small (~20–35 MB) Bergamot model and caches it. Subsequent translations are instant and fully offline. Try it: **turn off your Wi-Fi and keep chatting — translation still works.** That is the whole point of on-device AI.
+> **First use of each AI feature downloads a model, once, then it's cached and offline.** Translation: ~20–35 MB per language pair (Bergamot). Match assistant (`/ask`): ~380 MB (Qwen3-0.6B) — shows a progress toast. Voice notes: ~80 MB (Whisper base) — also shows a progress toast. All three fetch through QVAC's own registry, not a generic download bar, so expect a pause the first time you try each one on a cold machine. After that: **turn off your Wi-Fi and keep chatting — translation, `/ask`, and voice notes all keep working.** That's the whole point of on-device AI.
 
 Two machines on different networks work exactly the same way — share the room link over any channel; the Hyperswarm DHT connects them directly.
 
