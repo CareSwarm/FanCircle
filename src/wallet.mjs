@@ -42,7 +42,7 @@ export const CHAIN = LOCAL
       chainId: 11155111,
       rpc: process.env.RPC || 'https://sepolia.drpc.org',
       explorer: 'https://sepolia.etherscan.io',
-      // Mock USD₮ on Sepolia. Set FANCIRCLE_USDT once minted from the Candide/Pimlico faucet.
+      // Mock USD₮ on Sepolia. Set FANCIRCLE_USDT once minted from the Candide faucet.
       usdt: process.env.FANCIRCLE_USDT || null,
       usdtDecimals: 6
     }

@@ -50,7 +50,7 @@ async function main () {
 
   wallet.dispose?.()
   console.log('\n✅ PASS — WDK created a self-custodial wallet, derived HD accounts, and read live Sepolia balances.')
-  console.log('   Next: fund account[0] with test ETH + mock USD₮ from the Candide/Pimlico faucet to demo a real transfer.')
+  console.log('   Next: fund account[0] with test ETH + mock USD₮ from the Candide faucet to demo a real transfer.')
   process.exit(0)
 }
 

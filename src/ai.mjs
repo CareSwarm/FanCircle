@@ -114,7 +114,7 @@ export class AI {
 
   // ---- speech-to-text (voice notes) ----
   // Whisper's language hint is fixed at loadModel time, so cache one loaded
-  // model per spoken language (all WHISPER_BASE_Q8_0 — same ~150MB weights,
+  // model per spoken language (all WHISPER_BASE_Q8_0 — same ~80MB weights,
   // different decode config; cheap to keep a couple resident during a demo).
   _whisperModel (lang, onProgress) {
     const key = lang || 'auto'

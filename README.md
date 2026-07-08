@@ -14,7 +14,7 @@ Built for the Tether Developers Cup, entering all three tracks:
 |-------|----------------------------|
 | **Pears** (Hyperswarm) | Match rooms (chat, reactions, prediction polls) travel peer to peer over the Hyperswarm DHT. No application server. Room history and poll tallies are backed by an Autobase replicated log, so a fan who joins mid match gets full history and a correct tally, not just whatever gossip happened to arrive after they connected. |
 | **QVAC** (on-device AI) | Every message is translated on the recipient's own device through the QVAC SDK (Bergamot NMT): Vietnamese, English, Spanish, Arabic, and more. Voice notes are transcribed on-device (Whisper) and translated the same way. A small grounded LLM answers football questions (`/ask`) in whatever language you ask it. No cloud API in the loop, anywhere. |
-| **WDK** | Self custodial USDT tipping to a room's host or best commentator. Each fan holds their own seed; a tip is a real on-chain transfer (Sepolia). |
+| **WDK** | Self custodial USDT tipping to a room's host or best commentator. Each fan holds their own seed; a tip is a real on-chain transfer (Sepolia, or a local chain for zero-faucet testing). |
 
 P2P for rooms nobody can shut down, on-device AI so a fan on a bad connection can still follow along, self-custodial money so a tip goes fan-to-fan with nothing sitting in the middle. Take any one of the three away and the pitch stops making sense, which is the point of entering all three tracks.
 
@@ -44,8 +44,8 @@ npm run demo:alex      # → http://localhost:8081
 
 Open both in the browser:
 
-1. On 8080 (Minh), click **＋ Create room**, copy the link.
-2. On 8081 (Alex), paste it and **Join**. Both show 2 fans in room within a few seconds.
+1. On 8080 (Minh), click **＋ Create room**, copy the link. The bar up top shows a real World Cup 2026 knockout fixture with both flags, not a placeholder.
+2. On 8081 (Alex), paste it and **Join**. Both show 2 fans in room within a few seconds, each tagged with a flag for their language.
 3. Type a message on either side, in your own language. The other fan sees it translated live, on-device.
 4. **＋ New poll** runs a prediction poll; both vote, tallies sync peer to peer.
 5. `/ask offside rule?` (or any football question). A small on-device LLM answers, and the room sees the answer in their own language.
@@ -81,7 +81,7 @@ Check it yourself: `npm run spike:qvac` translates English↔Vietnamese on-devic
 
 ### WDK: `src/wallet.mjs`
 
-Each fan gets a self-custodial BIP-39 wallet via `@tetherto/wdk` and `@tetherto/wdk-wallet-evm` (no custodian, the seed never leaves the machine). Tips are real ERC-20 USDT transfers on Sepolia; the returned tx hash links straight to Etherscan.
+Each fan gets a self-custodial BIP-39 wallet via `@tetherto/wdk` and `@tetherto/wdk-wallet-evm` (no custodian, the seed never leaves the machine). A tip calls the account's `quoteTransfer()` for a fee estimate, then `transfer()` for a real ERC-20 USDT transfer, on Sepolia or a local chain for zero-faucet testing (see "Enabling USDT tipping" below). The chat bubble always shows the tx hash: a clickable Etherscan link when one exists, a click-to-copy hash when it doesn't (a local chain has no public explorer to link to).
 
 Check it yourself: `npm run spike:wdk` creates a wallet, derives HD accounts, and reads a live Sepolia balance.
 
@@ -135,9 +135,9 @@ Browser UI (app/)  ──WebSocket──►  Node backend (src/backend.mjs)  ─
 
 ## Third-party services (disclosure)
 
-- **QVAC model registry**: Bergamot translation models are fetched on first use, then cached and run locally. Inference is 100% on-device.
+- **QVAC model registry**: translation (Bergamot), voice transcription (Whisper), and the match assistant (Qwen3) all fetch their model on first use, then run from a local cache. Inference is 100% on-device.
 - **Ethereum RPC**: `https://sepolia.drpc.org`, a public Sepolia RPC, for balance reads and broadcasting tip transactions. Blockchain infrastructure, not an AI service.
-- **Testnet faucets**: Candide and Pimlico for mock USDT, a public Sepolia faucet for ETH, used only to fund demo wallets.
+- **Testnet faucets**: [Candide's test-ERC20 faucet](https://dashboard.candide.dev/faucet) for mock USDT, a public Sepolia faucet for ETH, used only to fund demo wallets.
 
 No pre-existing project code went into this; it was built during the hackathon window. Open-source dependencies are listed in `package.json`.
 
