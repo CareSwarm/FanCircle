@@ -1,16 +1,16 @@
 # 🏟️ FanCircle
 
-A peer-to-peer World Cup watch-party. No server, no account. Fans chat, react, and predict scores over a raw Hyperswarm connection, in their own language, and tip each other USDT straight from their own wallet.
+A peer to peer World Cup watch party. No server, no account. Fans chat, react, and predict scores over a raw Hyperswarm connection, in their own language, and tip each other USDT straight from their own wallet.
 
-Group watch-alongs today run on infrastructure that works against the fans who need it most: centralized chat that's blocked in half the countries that care about football, no real-time translation for cross-border banter, and no clean way to send a friend, or a great match commentator on the other side of the planet, a few dollars. FanCircle is built to fix that during the one window it actually matters: the 2026 World Cup, final on July 19.
+Group watch alongs today run on infrastructure that works against the fans who need it most: centralized chat that's blocked in half the countries that care about football, no real time translation for cross-border banter, and no clean way to send a friend, or a great match commentator on the other side of the planet, a few dollars. FanCircle is built to fix that during the one window it actually matters: the 2026 World Cup, final on July 19.
 
 Built for the Tether Developers Cup, entering all three tracks:
 
 | Track | What it does here |
 |-------|----------------------------|
-| **Pears** (Hyperswarm) | Match rooms (chat, reactions, prediction polls) travel peer to peer over the Hyperswarm DHT. No application server. Room history and poll tallies are backed by an Autobase replicated log, so a fan who joins mid-match gets full history and a correct tally, not just whatever gossip happened to arrive after they connected. |
+| **Pears** (Hyperswarm) | Match rooms (chat, reactions, prediction polls) travel peer to peer over the Hyperswarm DHT. No application server. Room history and poll tallies are backed by an Autobase replicated log, so a fan who joins mid match gets full history and a correct tally, not just whatever gossip happened to arrive after they connected. |
 | **QVAC** (on-device AI) | Every message is translated on the recipient's own device through the QVAC SDK (Bergamot NMT): Vietnamese, English, Spanish, Arabic, and more. Voice notes are transcribed on-device (Whisper) and translated the same way. A small grounded LLM answers football questions (`/ask`) in whatever language you ask it. No cloud API in the loop, anywhere. |
-| **WDK** | Self-custodial USDT tipping to a room's host or best commentator. Each fan holds their own seed; a tip is a real on-chain transfer (Sepolia). |
+| **WDK** | Self custodial USDT tipping to a room's host or best commentator. Each fan holds their own seed; a tip is a real on-chain transfer (Sepolia). |
 
 P2P for rooms nobody can shut down, on-device AI so a fan on a bad connection can still follow along, self-custodial money so a tip goes fan-to-fan with nothing sitting in the middle. Take any one of the three away and the pitch stops making sense, which is the point of entering all three tracks.
 
