@@ -1,26 +1,15 @@
 <svg viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
   <defs>
-    <radialGradient id="bg" cx="32%" cy="18%" r="95%">
-      <stop offset="0%" stop-color="#16294a"/>
-      <stop offset="55%" stop-color="#0e1830"/>
-      <stop offset="100%" stop-color="#0b1220"/>
-    </radialGradient>
     <linearGradient id="brand" x1="10%" y1="0%" x2="90%" y2="100%">
       <stop offset="0%" stop-color="#22d37f"/>
       <stop offset="100%" stop-color="#14b8a6"/>
     </linearGradient>
-    <radialGradient id="glow" cx="50%" cy="50%" r="50%">
-      <stop offset="0%" stop-color="#22d37f" stop-opacity="0.35"/>
-      <stop offset="100%" stop-color="#22d37f" stop-opacity="0"/>
-    </radialGradient>
   </defs>
 
-  <!-- app-icon style rounded-square backdrop, matches the product's own dark theme -->
-  <rect x="0" y="0" width="512" height="512" rx="112" fill="url(#bg)"/>
-  <rect x="0" y="0" width="512" height="512" rx="112" fill="none" stroke="#24365c" stroke-width="2"/>
-
-  <!-- soft glow behind the mark -->
-  <circle cx="256" cy="256" r="200" fill="url(#glow)"/>
+  <!-- flat single-color background, full bleed to the edge — no rounded
+       corners, no gradient, so there's no transparent corner to render as
+       white when flattened by a PNG exporter. -->
+  <rect x="0" y="0" width="512" height="512" fill="#0b1220"/>
 
   <!-- P2P mesh ring: 8 peers, connected directly to each other (no center hub) -->
   <g stroke="#3a507e" stroke-width="2.5" opacity="0.85" fill="none">
