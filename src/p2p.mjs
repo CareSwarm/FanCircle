@@ -1,9 +1,5 @@
-// P2P room over the Hyperswarm DHT — no server, peers connect directly and
-// swap end-to-end-encrypted (Noise) messages. Kept self-contained so it can
-// move into a Bare worklet for native Pear packaging later.
-//
-// Durable history + poll tallies are handled by roomlog.mjs (Autobase),
-// wired in below.
+// P2P room over Hyperswarm - no server, Noise-encrypted direct connections.
+// Durable history/tallies are handled separately by roomlog.mjs (Autobase).
 
 import EventEmitter from 'events'
 import Hyperswarm from 'hyperswarm'
@@ -59,9 +55,8 @@ export class Room extends EventEmitter {
     const peer = { conn, buf: '', profile: { name: id, lang: 'en' } }
     this.peers.set(id, peer)
 
-    // Announce who we are so others can label + translate our messages.
-    // logKey (when we have one, or once we learn one) lets new peers find the
-    // room's durable history without a separate out-of-band link.
+    // announce ourselves + logKey (if known), so new peers find durable
+    // history without a separate link
     this._sendTo(conn, { type: 'hello', from: this.me, profile: this.profile, logKey: this.logKey })
 
     conn.on('data', (data) => this._onData(id, data))
@@ -93,9 +88,7 @@ export class Room extends EventEmitter {
       const firstHello = !peer.helloSeen
       peer.helloSeen = true
       peer.profile = msg.profile || peer.profile
-      // hello can arrive again later (we re-broadcast it once we learn the
-      // room's logKey, so peers who missed it the first time still get it) —
-      // only announce the peer as joined once.
+      // hello re-broadcasts once we learn logKey, so only fire peer-join once
       if (firstHello) this.emit('peer-join', { id, profile: peer.profile })
       if (msg.logKey && !this.logKey && !this.isCreator) {
         this.logKey = msg.logKey

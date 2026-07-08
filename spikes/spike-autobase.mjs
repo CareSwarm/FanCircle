@@ -1,11 +1,5 @@
-// De-risk durable rooms — TRACK PEARS, deeper: Autobase multi-writer log
-// replicated over real Hyperswarm connections (matches production wiring).
-//
-// Proves:
-//  1) creator + joiner both write; both converge on one linearized view
-//  2) a THIRD peer joining AFTER messages exist replicates full prior history
-//  3) a poll tally computed by scanning the view is identical on all three
-//
+// Autobase multi-writer log over real Hyperswarm - proves convergence,
+// late-join replication, and matching poll tallies across 3 peers.
 //   node spikes/spike-autobase.mjs
 
 import Autobase from 'autobase'

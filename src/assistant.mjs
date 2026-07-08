@@ -1,7 +1,5 @@
-// On-device match assistant — small grounded LLM (Qwen3-0.6B) answers
-// football questions through QVAC. The facts sheet below is what keeps a
-// model this small accurate; swap in QVAC's RAG pipeline for live match
-// data down the line.
+// On-device match assistant, Qwen3-0.6B grounded on the facts sheet below
+// (small models drift without it).
 
 import * as qvac from '@qvac/sdk'
 
@@ -40,10 +38,8 @@ export class Assistant {
     if (this._model) return this._model
     this.loading = true
     try {
-      // temp: 0 = greedy decoding. A 0.6B model sampling with any temperature
-      // will occasionally wander off the grounding facts (seen: correctly
-      // explained offside, then added an ungrounded "a penalty is awarded"
-      // contradicting the facts sheet) — greedy keeps it on the facts it was given.
+      // temp:0 = greedy - sampling let this 0.6B model wander off the
+      // grounding facts sometimes.
       this._model = await withLockRetry(() => qvac.loadModel({ modelSrc: this.modelSrc, modelConfig: { temp: 0 }, onProgress }))
     } finally { this.loading = false }
     return this._model

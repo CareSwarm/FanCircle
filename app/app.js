@@ -78,9 +78,7 @@ $('joinRoom').addEventListener('click', () => { const v = $('joinInput').value.t
 function showRoom (topic) {
   $('roomInfo').classList.remove('hidden')
   $('roomLink').textContent = topic
-  // Creating/joining a room while already in one (e.g. clicking "Create
-  // room" twice) leaves the old room's chat/poll on screen otherwise —
-  // the member list resets but the messages look like they're still shared.
+  // clear stale chat/polls if re-creating/joining while already in a room
   chat.innerHTML = ''
   $('polls').innerHTML = ''
   voicePendingEl = null
@@ -138,9 +136,7 @@ function patchTranslation (id, translated) {
 }
 function addSystem (t) { chat.appendChild(el('div', 'system', esc(t))); if (atBottom()) scroll() }
 
-// The room creator's Autobase durable log just handed us the full room
-// history — chat and polls from before we even connected. Worth a beat of
-// its own, not just another gray system line.
+// Autobase history backfill deserves its own banner, not just a system line
 function renderSynced (count) {
   const stick = atBottom()
   const d = el('div', 'synced-banner', `⏪ <b>Synced ${count} update${count === 1 ? '' : 's'}</b> from the room's durable log — full history, even though you weren't here for it`)
@@ -260,9 +256,8 @@ $('tipSend').addEventListener('click', () => {
 })
 function renderTip (m) {
   const wrap = el('div', 'tip-msg')
-  // Local-chain demo mode has no public explorer (no URL to link to), but the
-  // tx hash is still real — show it either way so it's actually verifiable,
-  // as a link when there's somewhere to send it and a copyable hash otherwise.
+  // local chain has no explorer URL, but the hash is still real - link it
+  // if we can, else make it copyable
   let hashPart = ''
   if (m.hash) {
     const short = shortAddr(m.hash)

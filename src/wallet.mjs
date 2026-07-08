@@ -1,9 +1,6 @@
-// Self-custodial USDT tipping via WDK. Each user holds their own BIP-39
-// seed (no custodian). Tips are real ERC-20 transfers; tx hash links to
-// Etherscan.
-//
-// Seed lives in a gitignored file under .wallet/ — fine for a demo wallet,
-// swap for OS keychain / encrypted storage before this touches real funds.
+// Self-custodial USDT tipping via WDK - real ERC-20 transfers, tx hash
+// links to Etherscan. Seed lives in a gitignored .wallet/ file, fine for a
+// demo, swap for real keychain storage later.
 
 import fs from 'fs'
 import path from 'path'

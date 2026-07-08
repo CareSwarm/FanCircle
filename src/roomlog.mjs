@@ -1,11 +1,6 @@
-// Durable room history on Autobase. Creator is the sole writer, everyone
-// else replicates — a fan joining late still gets full chat/poll history,
-// not just whatever gossip arrives after they connect.
-//
-// Own Hyperswarm instance, separate from p2p.mjs: Corestore replication is
-// protomux-based and can't share a socket with the raw newline-JSON gossip
-// over there. Multi-writer (addWriter) works fine too, just adds a grant
-// step on join we don't need yet.
+// Durable room history on Autobase - creator is sole writer, everyone else
+// replicates. Own Hyperswarm instance since Corestore's protomux replication
+// can't share a socket with p2p.mjs's raw gossip.
 
 import Autobase from 'autobase'
 import Corestore from 'corestore'

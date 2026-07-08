@@ -1,10 +1,6 @@
-// Block 0 spike — TRACK QVAC
-// Proves on-device translation works through the QVAC SDK (no cloud).
-// First run downloads the Bergamot model (~20-35 MB per pair); subsequent runs are cached.
-//
+// TRACK QVAC - on-device translation via QVAC SDK, no cloud.
+// First run downloads Bergamot (~20-35MB/pair), then cached.
 //   node spikes/spike-qvac.mjs
-//
-// Confirms EN->VI and VI->EN, measures load + per-sentence latency and model size.
 
 import { loadModel, translate, unloadModel, BERGAMOT_EN_VI, BERGAMOT_VI_EN } from '@qvac/sdk'
 

@@ -1,9 +1,5 @@
-// Verifies the Autobase-backed RoomLog durability (src/roomlog.mjs) through
-// the REAL app stack, not just the isolated spike: Minh (creator) and Alex
-// chat + vote, THEN a third peer (Sam) joins the room late and must receive
-// full chat history + a correct poll tally via room-log replication — not
-// just whatever gossip happens to arrive after they connect.
-//
+// RoomLog durability (src/roomlog.mjs): Sam joins late, must get full chat
+// history + correct poll tally via replication, not just live gossip.
 // Requires three backends running:
 //   NAME=Minh LANG_CODE=vi PORT=8080 WALLET_DIR=.wallet/minh node src/backend.mjs
 //   NAME=Alex LANG_CODE=en PORT=8081 WALLET_DIR=.wallet/alex node src/backend.mjs
@@ -88,9 +84,8 @@ async function main () {
   check(samChats.some((c) => c.text === 'Trận này chắc căng đây'), "AUTOBASE: Sam's history includes Minh's pre-join Vietnamese message")
   check(samChats.some((c) => c.text === 'Definitely, could go to penalties'), "AUTOBASE: Sam's history includes Alex's pre-join English message")
 
-  // Chat bubbles render immediately; translation patches in via a follow-up
-  // 'chat-translated' once ai.translate() resolves (first use of vi/en->es
-  // here, so a real cold-cache wait) — wait for those patches explicitly.
+  // translation patches in via 'chat-translated' after ai.translate()
+  // resolves - wait for it explicitly (cold cache on first vi/en->es use)
   console.log('\nSam chat inbox (should include BOTH pre-join messages):')
   let anyTranslated = false
   for (const c of samChats) {

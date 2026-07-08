@@ -1,5 +1,4 @@
-// End-to-end golden-path test across TWO running backends (two users).
-// Proves: Pears room join + QVAC cross-language translation + poll tally.
+// e2e test across two live backends: room join, translation, poll tally.
 // Requires both backends running:
 //   NAME=Minh LANG_CODE=vi PORT=8080 WALLET_DIR=.wallet/minh node src/backend.mjs
 //   NAME=Alex LANG_CODE=en PORT=8081 WALLET_DIR=.wallet/alex node src/backend.mjs
@@ -54,10 +53,8 @@ async function main () {
   const alexMembers = await alex.wait((m) => m.t === 'members' && m.list.length === 2)
   check(minhMembers.list.length === 2 && alexMembers.list.length === 2, 'PEARS: peers discovered each other, room has 2 members')
 
-  // 2) QVAC — Minh writes Vietnamese, Alex must receive an English translation.
-  // The chat bubble renders immediately (translated:null) and gets patched by
-  // a follow-up 'chat-translated' once ai.translate() resolves — so a cold
-  // model cache never leaves the receiving screen looking frozen.
+  // 2) QVAC - chat renders immediately (translated:null), patched by
+  // 'chat-translated' once ai.translate() resolves.
   minh.send({ t: 'chat', text: 'Ai sẽ thắng trận bán kết tối nay?' })
   const atAlex = await alex.wait((m) => m.t === 'chat' && !m.self && m.lang === 'vi')
   check(atAlex.translated === null, 'QVAC: chat renders immediately, translation not blocking the bubble')

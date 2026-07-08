@@ -1,13 +1,7 @@
-// Block 0 spike — TRACK WDK
-// Proves self-custodial wallet creation, HD account derivation, and a LIVE
-// balance read against the Sepolia testnet RPC through WDK.
-//
-//   node spikes/spike-wdk.mjs                 -> random seed, derive + read balances
-//   SEED="word1 ... word12" node spikes/spike-wdk.mjs  -> use a funded dev wallet
-//   USDT=0x... node spikes/spike-wdk.mjs      -> also query a test-USDT token balance
-//
-// The write path (transfer) needs faucet funds; this spike proves the read path
-// end-to-end and derives a stable address you can fund once via the faucet.
+// TRACK WDK - self-custodial wallet, HD derivation, live Sepolia balance read.
+//   node spikes/spike-wdk.mjs                          -> random seed
+//   SEED="word1 ... word12" node spikes/spike-wdk.mjs  -> funded dev wallet
+//   USDT=0x... node spikes/spike-wdk.mjs               -> also check USDT balance
 
 import WDK from '@tetherto/wdk'
 import WalletManagerEvm from '@tetherto/wdk-wallet-evm'

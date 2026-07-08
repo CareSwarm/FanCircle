@@ -1,6 +1,5 @@
-// On-device translation (Bergamot NMT, English-pivot for pairs with no
-// direct model) and voice-note transcription (multilingual Whisper) — all
-// through the QVAC SDK, no cloud calls.
+// On-device translation (Bergamot) and voice transcription (Whisper) via
+// the QVAC SDK, no cloud calls.
 
 import * as qvac from '@qvac/sdk'
 import { detectOne } from '@qvac/langdetect-text'
@@ -10,12 +9,8 @@ function pairConst (from, to) {
   return qvac['BERGAMOT_' + from.toUpperCase() + '_' + to.toUpperCase()]
 }
 
-// The caller's `from` is a UI setting (the sender's chosen profile language),
-// not a guarantee of what they actually typed — someone with their profile
-// set to Vietnamese typing in English is a real, common case, not an edge
-// case. Translating already-English text as if it were Vietnamese produces
-// nonsense (confirmed: "offside rule?" -> "Outside the rules?"), so detect
-// the real language of the text and prefer that over the declared one.
+// `from` is just the profile setting, not what they actually typed - detect
+// the real language instead (fixed "offside rule?" -> "Outside the rules?").
 function detectLang (text) {
   try {
     const r = detectOne(text)
@@ -23,10 +18,8 @@ function detectLang (text) {
   } catch { return null }
 }
 
-// QVAC's model registry is one shared cache per machine (RocksDB-backed),
-// and each process spawns its own bare worker to hit it. A couple of those
-// racing for the lock throws "File descriptor could not be locked" — it's
-// transient, so just retry.
+// shared model registry can throw a transient lock error under concurrent
+// access ("File descriptor could not be locked"), just retry.
 async function withLockRetry (fn, { retries = 4, delayMs = 400 } = {}) {
   let lastErr
   for (let i = 0; i <= retries; i++) {
@@ -43,12 +36,8 @@ export class AI {
   constructor () {
     // cache: "from>to" -> Promise<modelId>
     this._models = new Map()
-    // Serialize QVAC inference calls: firing translate()/transcribe() calls
-    // concurrently (e.g. optimistic chat translating several backfilled
-    // messages at once) let their token streams cross-contaminate — one
-    // request's output landing on another's id. Queue instead of running
-    // in parallel; on-device inference wasn't going to usefully parallelize
-    // on one CPU anyway.
+    // serialize QVAC calls - concurrent translate()/transcribe() cross-
+    // contaminate token streams between requests.
     this._queue = Promise.resolve()
   }
 
@@ -113,13 +102,9 @@ export class AI {
   }
 
   // ---- speech-to-text (voice notes) ----
-  // Whisper's language hint is fixed at loadModel time, so cache one loaded
-  // model per spoken language (all WHISPER_SMALL_Q8_0 — same ~265MB weights,
-  // different decode config; cheap to keep a couple resident during a demo).
-  // The base model (~80MB) drops words on casual, modal-elided speech
-  // ("who do you think win tonight" -> "went"/dropped entirely) and loses
-  // tone marks on Vietnamese ("thắng" -> "thang"); small fixes both cleanly
-  // in testing, worth the extra download for a track this central.
+  // language hint is fixed at loadModel time, so cache one model per spoken
+  // language. SMALL not BASE - base dropped words on casual speech and lost
+  // VI tone marks in testing.
   _whisperModel (lang, onProgress) {
     const key = lang || 'auto'
     if (!this._whisper) this._whisper = new Map()

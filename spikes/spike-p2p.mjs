@@ -1,14 +1,6 @@
-// Block 0 spike — TRACK PEARS
-// Proves Hyperswarm DHT connectivity works on this machine/network.
-//
-// Two modes:
-//   node spikes/spike-p2p.mjs             -> self-test: two swarms on one topic,
-//                                            connect over the DHT, exchange a message.
-//   node spikes/spike-p2p.mjs <hex-topic> -> peer mode: join an existing room topic
-//                                            (run in a second terminal to test 2 processes).
-//
-// Exit 0 on success, 1 on timeout. This is the canonical pattern from
-// docs.pears.com "Making a Pear Desktop Application", used as-is in the room worklet.
+// TRACK PEARS - proves Hyperswarm DHT connectivity.
+//   node spikes/spike-p2p.mjs             -> self-test, two swarms exchange a message
+//   node spikes/spike-p2p.mjs <hex-topic> -> peer mode, run in a 2nd terminal
 
 import Hyperswarm from 'hyperswarm'
 import crypto from 'hypercore-crypto'

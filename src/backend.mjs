@@ -1,7 +1,5 @@
-// One process = one fan. Wires up Room (p2p.mjs), AI (translation +
-// assistant), and Wallet, then serves the UI over local HTTP/WS.
-// That localhost socket is just UI<->backend IPC — all fan-to-fan traffic
-// is Hyperswarm.
+// One process = one fan. Wires up Room/AI/Wallet, serves the UI over local
+// HTTP/WS (IPC only - fan-to-fan traffic is all Hyperswarm).
 
 import http from 'http'
 import fs from 'fs'
@@ -73,9 +71,8 @@ function wireRoom (room) {
   room.on('log-ready', (history) => replayHistory(history).catch((e) => console.error('replay', e)))
 }
 
-// The room creator durably logs chat/voice/assistant/poll/tip events via
-// Autobase (src/roomlog.mjs); every peer replicates it, so joining mid-match
-// backfills history instead of starting from a blank room.
+// creator logs events via Autobase (roomlog.mjs); replicating peers backfill
+// history on join instead of starting from a blank room.
 async function replayHistory (history) {
   for (const entry of history) await onPeerMessage(entry)
   if (history.length) pushUI({ t: 'synced', count: history.length })
@@ -89,9 +86,8 @@ async function onPeerMessage (msg) {
   }
   switch (msg.type) {
     case 'chat': {
-      // Render immediately, patch the translation in once it resolves — on a
-      // cold model cache that first translate() can take a while, and the
-      // receiving screen shouldn't sit blank for it.
+      // render immediately, patch translation in once it resolves (cold
+      // model cache can be slow)
       pushUI({ t: 'chat', id: msg.id, from: msg.from, name: msg.name, lang: msg.lang, text: msg.text, translated: null, ts: msg.ts, self: false })
       if (msg.lang && msg.lang !== state.profile.lang) {
         ai.translate(msg.text, msg.lang, state.profile.lang)
@@ -165,9 +161,8 @@ async function handleVoice (ws, m) {
   }
 }
 
-// QVAC's onProgress reports {percentage, downloaded, total} on an irregular
-// schedule — bucket by 25% so a toast fires once per quarter, not zero times
-// (exact-match modulo) or several times (loose modulo).
+// onProgress fires on an irregular schedule - bucket by 25% for one toast
+// per quarter.
 function progressToaster (label) {
   let shown = -1
   return (p) => {
