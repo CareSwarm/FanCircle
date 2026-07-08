@@ -78,7 +78,13 @@ $('joinRoom').addEventListener('click', () => { const v = $('joinInput').value.t
 function showRoom (topic) {
   $('roomInfo').classList.remove('hidden')
   $('roomLink').textContent = topic
-  $('chatEmpty')?.remove()
+  // Creating/joining a room while already in one (e.g. clicking "Create
+  // room" twice) leaves the old room's chat/poll on screen otherwise —
+  // the member list resets but the messages look like they're still shared.
+  chat.innerHTML = ''
+  $('polls').innerHTML = ''
+  voicePendingEl = null
+  pendingEl = null
   $('matchTitle').textContent = FIXTURE
   $('liveBadge').classList.remove('hidden')
 }
