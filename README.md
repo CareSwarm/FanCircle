@@ -1,24 +1,24 @@
 # 🏟️ FanCircle
 
-**A peer-to-peer, multilingual World Cup watch-party — no servers, no accounts, on-device AI translation, and self-custodial USDT tipping.**
+A peer-to-peer World Cup watch-party. No server, no account — fans chat, react, and predict scores over a raw Hyperswarm connection, in their own language, and tip each other USDT straight from their own wallet.
 
-Football is the most global thing on earth, but the way we watch it together online is not. Group chats are centralized and blocked in football-mad countries; nobody translates cross-language banter in real time; and there is no honest way to send your friend — or a great fan commentator halfway across the world — a few dollars. FanCircle fixes all three, and it does it during the one moment 6 billion people care: **the 2026 World Cup, whose final is July 19.**
+Group watch-alongs today run on infrastructure that works against the fans who need it most: centralized chat that's blocked in half the countries that care about football, no real-time translation for cross-border banter, and no clean way to send a friend — or a great match commentator on the other side of the planet — a few dollars. FanCircle is built to fix that during the one window it actually matters: the 2026 World Cup, final on July 19.
 
-Built for the **Tether Developers Cup**, entering all three tracks:
+Built for the Tether Developers Cup, entering all three tracks:
 
-| Track | What FanCircle uses it for |
+| Track | What it does here |
 |-------|----------------------------|
-| **Pears** (Holepunch / Hyperswarm) | Fully peer-to-peer match rooms — chat, reactions, and prediction polls travel directly between fans over the Hyperswarm DHT. No application server. Room history and poll tallies are backed by an **Autobase** replicated log, so a fan who joins mid-match still gets full history and a correct tally — not just gossip from the moment they connected. |
-| **QVAC** (on-device AI) | Every chat message is translated **on your own device** into each fan's language through the QVAC SDK (Bergamot NMT) — Vietnamese ↔ English ↔ Spanish ↔ Arabic ↔ … Voice notes are transcribed on-device (Whisper) and translated the same way. A grounded on-device LLM answers football questions (`/ask`), in every fan's language. No cloud AI — speech, translation, and completion all run locally. |
-| **WDK** (Wallet Development Kit) | Self-custodial USD₮ tipping to room hosts / fan commentators. Each fan holds their own seed; tips are real on-chain transfers (Sepolia testnet). |
+| **Pears** (Hyperswarm) | Match rooms — chat, reactions, prediction polls — travel peer to peer over the Hyperswarm DHT. No application server. Room history and poll tallies are backed by an Autobase replicated log, so a fan who joins mid-match gets full history and a correct tally, not just whatever gossip happened to arrive after they connected. |
+| **QVAC** (on-device AI) | Every message is translated on the recipient's own device through the QVAC SDK (Bergamot NMT) — Vietnamese, English, Spanish, Arabic, and more. Voice notes are transcribed on-device (Whisper) and translated the same way. A small grounded LLM answers football questions (`/ask`) in whatever language you ask it. No cloud API in the loop, anywhere. |
+| **WDK** | Self-custodial USDT tipping to a room's host or best commentator. Each fan holds their own seed; a tip is a real on-chain transfer (Sepolia). |
 
-> **The theme is the filter, the stack is the point.** FanCircle is a watch-party app, but its reason to exist is that it genuinely needs all three parts of the Tether stack — P2P for censorship-resistant rooms, on-device AI so a fan on a weak network in a developing country can still cross the language barrier, and self-custodial money so value flows fan-to-fan without a platform in the middle.
+P2P for rooms nobody can shut down, on-device AI so a fan on a bad connection can still follow along, self-custodial money so a tip goes fan-to-fan with nothing sitting in the middle. Take any one of the three away and the pitch stops making sense — that's the point of entering all three tracks.
 
 ---
 
 ## Quick start
 
-**Prerequisites:** [Node.js](https://nodejs.org) **≥ 22.17** (`node -v` to check). macOS / Linux / Windows. [ffmpeg](https://ffmpeg.org) is optional — only needed for voice notes; everything else works without it.
+**Prerequisites:** [Node.js](https://nodejs.org) ≥ 22.17 (`node -v` to check), macOS / Linux / Windows. [ffmpeg](https://ffmpeg.org) is optional, only needed for voice notes — everything else runs without it.
 
 ```bash
 git clone <this-repo>
@@ -26,9 +26,9 @@ cd FanCircle
 npm install
 ```
 
-> **Start `npm install` before you sit down to judge this.** QVAC ships prebuilt native inference binaries for every platform it supports (macOS/Linux/Windows × arm64/x64, plus mobile) in one monolithic SDK — `node_modules` ends up around **5.5 GB** even though FanCircle only uses three of the ~12 model families in there. On typical wifi that's **10–30 minutes**, not seconds. Once it's done, everything below really is fast — this is a one-time cost.
+Start that install before you sit down to look at this. QVAC ships prebuilt native inference binaries for every platform it supports — macOS/Linux/Windows × arm64/x64, plus mobile — in one SDK, so `node_modules` lands around 5.5 GB even though FanCircle only touches three of the roughly dozen model families in there. Expect 10–30 minutes on typical Wi-Fi, not seconds. It's a one-time cost; everything after this is fast.
 
-Open **two terminals** to play two fans on one machine:
+Two terminals, two fans, one machine:
 
 ```bash
 # Terminal 1 — a Vietnamese fan
@@ -38,85 +38,80 @@ npm run demo:minh      # → http://localhost:8080
 npm run demo:alex      # → http://localhost:8081
 ```
 
-Now open **http://localhost:8080** and **http://localhost:8081** in two browser windows:
+Open both in the browser:
 
-1. On **8080 (Minh)** click **＋ Create room**, then **copy** the room link.
-2. On **8081 (Alex)** paste it into **paste room link** and click **Join**. Within a few seconds both show **2 fans in room**.
-3. Type a message on either side **in your own language**. The other fan sees it translated live, on-device (🌐).
-4. Click **＋ New poll** to run a prediction poll; both fans vote and tallies sync peer-to-peer.
-5. Type **`/ask offside rule?`** (or any football question) — a small LLM answers **on your device**, and the answer is shared to the room in everyone's language.
-6. Click **🎙️** to record a short voice note. It's transcribed **on your device** (Whisper), sent to the room, and each fan sees it translated into their own language, with the original audio playable. *(Needs [ffmpeg](https://ffmpeg.org) installed — `brew install ffmpeg` / `apt install ffmpeg`; the backend logs whether it found it on boot.)*
-7. Click **💸 tip** next to a fan to send USD₮ — **this needs the one-time setup in "Enabling USD₮ tipping" below first** (a funded Sepolia wallet, or the zero-faucet local-chain mode, which needs [Foundry](https://getfoundry.sh) and two more terminals); skip that and the button is there but there's nothing to send yet.
-8. **The best proof in the repo — a fan joining mid-match:** open a third terminal, `npm run demo:sam` (→ http://localhost:8082), paste the same room link, and Join. Sam wasn't there for any of the above — no server ever stored it — but the room's Autobase log replicates to him, and you'll see a green **⏪ Synced N updates** banner land with full chat history *and* the correct poll tally, translated straight into Spanish. This is the hardest engineering in the repo (`src/roomlog.mjs`, proven end-to-end in `spikes/spike-lateJoiner.mjs`) and it's easy to miss if you stop at step 7.
+1. On 8080 (Minh), click **＋ Create room**, copy the link.
+2. On 8081 (Alex), paste it and **Join**. Both show 2 fans in room within a few seconds.
+3. Type a message on either side, in your own language. The other fan sees it translated live, on-device.
+4. **＋ New poll** runs a prediction poll; both vote, tallies sync peer to peer.
+5. `/ask offside rule?` (or any football question) — a small on-device LLM answers, and the room sees the answer in their own language.
+6. **🎙️** records a short voice note. It's transcribed on-device, sent to the room, and each fan sees a translated transcript with the original audio playable. Needs [ffmpeg](https://ffmpeg.org) — `brew install ffmpeg` / `apt install ffmpeg`; the backend logs on boot whether it found it.
+7. **💸 tip** next to a fan sends USDT — this needs the one-time setup under "Enabling USDT tipping" below (a funded Sepolia wallet, or the zero-faucet local-chain mode). Skip that and the button's there but there's nothing to send yet.
+8. The best proof in the repo: open a third terminal, `npm run demo:sam` (→ localhost:8082), paste the same room link, and join. Sam wasn't around for any of the above — no server ever stored it — but the room's Autobase log replicates to him, and a green **⏪ Synced N updates** banner lands with the full chat history and the correct poll tally, translated straight into Spanish. This is the hardest engineering in the repo (`src/roomlog.mjs`, proven end to end in `spikes/spike-lateJoiner.mjs`), and easy to miss if you stop at step 7.
 
-> **First use of each AI feature downloads a model, once, then it's cached and offline.** Translation: ~20–35 MB per language pair (Bergamot). Match assistant (`/ask`): ~380 MB (Qwen3-0.6B) — shows a progress toast. Voice notes: ~80 MB (Whisper base) — also shows a progress toast. All three fetch through QVAC's own registry, not a generic download bar, so expect a pause the first time you try each one on a cold machine. After that: **turn off your Wi-Fi and keep chatting — translation, `/ask`, and voice notes all keep working.** That's the whole point of on-device AI.
+First use of each AI feature downloads a model, once, then it's cached and offline: translation is ~20–35 MB per language pair, the match assistant is ~380 MB (Qwen3-0.6B, shows a progress toast), voice notes are ~80 MB (Whisper base, same). All three come through QVAC's own registry rather than a generic download bar, so expect a pause the first time on a cold machine. After that, turn off your Wi-Fi and keep chatting — translation, `/ask`, and voice notes all keep working. That's what "on-device" is supposed to mean.
 
-Two machines on different networks work exactly the same way — share the room link over any channel; the Hyperswarm DHT connects them directly.
+Two machines on different networks work the same way — share the room link over any channel and the Hyperswarm DHT connects them directly.
 
 ---
 
-## How each track is used (for judges)
+## How each track is used
 
 ### Pears — `src/p2p.mjs` (gossip) + `src/roomlog.mjs` (durable history)
-A room is a 32-byte topic. Peers `swarm.join(topic)` and connect directly over the **Hyperswarm DHT** with end-to-end-encrypted (Noise) streams — the exact pattern from the official *"Making a Pear Desktop Application"* guide. Chat, reactions, poll creation and votes are newline-delimited JSON gossiped to every connected peer for instant delivery. There is **no application server**: the localhost HTTP/WebSocket in this build is only how the local browser UI talks to the local process (like Electron IPC); **all fan-to-fan traffic is Hyperswarm.**
 
-On top of that, the room creator runs an **Autobase** — a Holepunch multiwriter append-log — and every peer replicates it over its own Hyperswarm swarm (Corestore replication is a separate protocol from the raw gossip, so it gets its own connections). Chat, votes, voice notes, assistant answers and tips are durably appended; when a fan joins mid-match, their backend replays that log — full chat history and a correct, authoritative poll tally, translated on-device into their language — not just whatever gossip happens to arrive after they connect. Reactions are intentionally left out of the durable log (nobody wants 50 old 🔥 replaying on join). Multi-writer (peers appending directly, granted via Autobase's `addWriter`) is proven in `spikes/spike-autobase.mjs` and is a natural upgrade from this single-writer-per-room MVP.
+A room is a 32-byte topic. Peers `swarm.join(topic)` and connect directly over the Hyperswarm DHT with Noise-encrypted streams — the pattern from the official "Making a Pear Desktop Application" guide. Chat, reactions, poll creation, and votes are newline-delimited JSON gossiped to every connected peer for instant delivery. The localhost WebSocket in this build is UI-to-process IPC, nothing more (think Electron IPC); every fan-to-fan message moves over Hyperswarm.
 
-*Verify it:* `npm run spike:p2p` spins up two swarms that find each other over the live DHT and exchange messages. `node spikes/spike-autobase.mjs` proves multi-writer convergence + late-join replication in isolation; `node spikes/spike-lateJoiner.mjs` (with three backends running) proves it through the real app — a third fan joining after messages and votes already happened gets full backfill and a correct tally.
+On top of that, the room creator runs an Autobase — a Holepunch multiwriter append-log — and every peer replicates it over its own Hyperswarm swarm (Corestore replication is a separate protocol from the raw gossip and needs its own connections). Chat, votes, voice notes, assistant answers, and tips are durably appended; when a fan joins mid-match, their backend replays that log — full chat history and an authoritative poll tally, translated on-device into their language, not just whatever gossip happened to arrive after they connected. Reactions stay gossip-only on purpose — nobody wants fifty old 🔥 replaying on join. Multi-writer rooms (any peer appending directly, granted via Autobase's `addWriter`) work — see `spikes/spike-autobase.mjs` — and are the natural next step up from this single-writer-per-room build.
+
+Check it yourself: `npm run spike:p2p` spins up two swarms that find each other over the live DHT and trade messages. `node spikes/spike-autobase.mjs` shows multi-writer convergence and late-join replication in isolation. `node spikes/spike-lateJoiner.mjs`, run against three live backends, proves it through the real app — a third fan joining after messages and votes already happened gets full backfill and a correct tally.
 
 ### QVAC — `src/ai.mjs` (translation) + `src/assistant.mjs` (match assistant)
-Translation runs **entirely on-device through the QVAC SDK** (`@qvac/sdk`), using Bergamot NMT models loaded from QVAC's registry. Each user sets their language; any incoming message in another language is translated locally before display. Pairs with no direct model pivot through English automatically.
 
-The **match assistant** (`/ask …`) is a small grounded LLM (Qwen3-0.6B) run through QVAC `completion()`, answering rules/stats questions on-device. A fan's question is translated to English, answered locally, then the answer is shared to the room and translated back into each fan's own language — a fully multilingual, fully offline loop.
+Translation runs on-device through the QVAC SDK (`@qvac/sdk`), using Bergamot NMT models pulled from QVAC's registry. Each fan sets their language; anything arriving in a different one gets translated locally before it renders. Pairs with no direct model pivot through English automatically.
 
-**Voice notes** (`src/voice.mjs`): the browser records with `MediaRecorder`; the sender's backend decodes the clip (ffmpeg — a local, offline container conversion, not an AI call) and transcribes it **on-device** with QVAC's multilingual Whisper (`WHISPER_BASE_Q8_0`). The transcript is broadcast over the room (Pears); each peer translates it on *their own* device before display, and the original audio is included so peers can also hear the real voice. No cloud AI API is ever called anywhere in this chain — required by the QVAC track, and the reason all of it keeps working with the network off.
+The match assistant (`/ask …`) is a small grounded LLM, Qwen3-0.6B, run through QVAC's `completion()`, answering rules and stats questions on-device. A question gets translated to English, answered locally, and the answer goes back to the room translated into each fan's own language.
 
-*Verify it:* `npm run spike:qvac` translates English↔Vietnamese on-device (~250 ms/sentence cached); `node spikes/spike-llm.mjs` runs the grounded assistant; `node spikes/spike-voice.mjs <audio-file> [lang]` runs on-device transcription.
+Voice notes (`src/voice.mjs`): the browser records with `MediaRecorder`; the sender's backend decodes the clip with ffmpeg — a local container conversion, not an AI call — and transcribes it on-device with QVAC's multilingual Whisper (`WHISPER_BASE_Q8_0`). The transcript broadcasts over the room; each peer translates it on their own device before display, and the original audio comes along too so peers can hear the real voice. No cloud AI call anywhere in that chain, which is the whole requirement of this track and the reason it survives with the network off.
+
+Check it yourself: `npm run spike:qvac` translates English↔Vietnamese on-device (~250 ms/sentence once cached). `node spikes/spike-llm.mjs` runs the grounded assistant standalone. `node spikes/spike-voice.mjs <audio-file> [lang]` runs on-device transcription on any clip you give it.
 
 ### WDK — `src/wallet.mjs`
-Each fan gets a **self-custodial** BIP-39 wallet via `@tetherto/wdk` + `@tetherto/wdk-wallet-evm` (no custodian; the seed never leaves the machine). Tips are real ERC-20 USD₮ `transfer()`s on the **Sepolia** testnet; the returned tx hash links to Etherscan so anyone can verify the transfer on-chain.
 
-*Verify it:* `npm run spike:wdk` creates a wallet, derives HD accounts, and reads live Sepolia balances.
+Each fan gets a self-custodial BIP-39 wallet via `@tetherto/wdk` and `@tetherto/wdk-wallet-evm` — no custodian, the seed never leaves the machine. Tips are real ERC-20 USDT transfers on Sepolia; the returned tx hash links straight to Etherscan.
+
+Check it yourself: `npm run spike:wdk` creates a wallet, derives HD accounts, and reads a live Sepolia balance.
 
 ---
 
-## Enabling USD₮ tipping
+## Enabling USDT tipping
 
-The chat + translation demo above needs no blockchain. To also demo **tipping**, pick one path:
+Chat and translation need no blockchain at all. To demo tipping, pick one:
 
-### Option A — Local chain, zero faucet (fastest for judges)
-
-Requires [Foundry](https://getfoundry.sh) (`anvil`, `forge`). Three terminals:
+**Option A — local chain, zero faucet, fastest for judges.** Needs [Foundry](https://getfoundry.sh) (`anvil`, `forge`).
 
 ```bash
 anvil                                       # terminal A: local EVM
-npm run chain:setup                         # terminal B: deploy mock USD₮, fund both wallets
+npm run chain:setup                         # terminal B: deploy mock USDT, fund both wallets
 FANCIRCLE_CHAIN=local npm run demo:minh     # terminal C
 FANCIRCLE_CHAIN=local npm run demo:alex     # terminal D
 ```
 
-Both wallets start with 1000 USD₮; the **💸 tip** button now sends a real transfer on the local chain (verify the sender's balance drops). No faucet, no accounts.
+Both wallets start with 1000 USDT; the tip button sends a real transfer on the local chain (check the sender's balance drop). No faucet, no account, nothing to sign up for.
 
-### Option B — Sepolia public testnet (real, Etherscan-verifiable)
-
-Tipping needs a funded wallet and the test-USD₮ contract address. Print your two demo wallet addresses:
+**Option B — Sepolia public testnet, real and Etherscan-verifiable.** Print your two demo wallet addresses:
 
 ```bash
 node scripts/wallet-info.mjs
 ```
 
-Then, for each address:
-
-1. **Get test ETH (gas)** from a Sepolia faucet (e.g. [sepolia-faucet.pk910.de](https://sepolia-faucet.pk910.de) or [Google Cloud Sepolia faucet](https://cloud.google.com/application/web3/faucet/ethereum/sepolia)).
-2. **Get mock USD₮** from the [Candide test-ERC20 faucet](https://dashboard.candide.dev/faucet) or [Pimlico test-ERC20 faucet](https://dashboard.pimlico.io/test-erc20-faucet). Note the token's contract address.
-3. Start the app with that contract address set:
+For each address: grab test ETH from a Sepolia faucet ([sepolia-faucet.pk910.de](https://sepolia-faucet.pk910.de) or [Google Cloud's](https://cloud.google.com/application/web3/faucet/ethereum/sepolia)), grab mock USDT from the [Candide](https://dashboard.candide.dev/faucet) or [Pimlico](https://dashboard.pimlico.io/test-erc20-faucet) test-ERC20 faucet, note the token contract, then:
 
 ```bash
 FANCIRCLE_USDT=0xYourTestUsdtContract npm run demo:minh
 FANCIRCLE_USDT=0xYourTestUsdtContract npm run demo:alex
 ```
 
-Now the wallet shows a USD₮ balance and the **💸 tip** button sends a real on-chain transfer. *(Gasless "pay fees in USD₮" via the WDK ERC-4337 / 7702 modules is on the roadmap below.)*
+Now the wallet shows a real USDT balance and the tip button sends a real on-chain transfer. Gasless "pay fees in USDT" via WDK's ERC-4337/7702 modules is on the roadmap below, not shipped yet.
 
 ---
 
@@ -125,33 +120,33 @@ Now the wallet shows a USD₮ balance and the **💸 tip** button sends a real o
 ```
 Browser UI (app/)  ──WebSocket──►  Node backend (src/backend.mjs)  ──►  Room  (Pears / Hyperswarm)  ──DHT──►  other fans
    one per fan                     one process = one fan            ├──►  AI    (QVAC / on-device translate)
-                                                                    └──►  Wallet (WDK / USD₮ on Sepolia)
+                                                                    └──►  Wallet (WDK / USDT on Sepolia)
 ```
 
-The P2P layer (`src/p2p.mjs`) is deliberately isolated so it can be lifted into a **Bare worklet** for native Pear-app packaging (`pear://` distribution, P2P OTA updates) — see roadmap.
+`src/p2p.mjs` is deliberately self-contained so the P2P layer can move into a Bare worklet for native Pear-app packaging — `pear://` distribution, P2P OTA updates — see the roadmap.
 
 ---
 
-## Third-party services (disclosure per hackathon rules)
+## Third-party services (disclosure)
 
-- **QVAC model registry** — Bergamot translation models are fetched on first use from QVAC's registry, then cached and run **locally**. Inference is 100% on-device; no cloud AI.
-- **Ethereum RPC** — `https://sepolia.drpc.org` (public Sepolia RPC) for wallet balance reads and broadcasting tip transactions. Blockchain infrastructure, not an AI service.
-- **Testnet faucets** — Candide / Pimlico (mock USD₮) and a public Sepolia ETH faucet, used only to fund demo wallets.
+- **QVAC model registry** — Bergamot translation models are fetched on first use, then cached and run locally. Inference is 100% on-device.
+- **Ethereum RPC** — `https://sepolia.drpc.org`, a public Sepolia RPC, for balance reads and broadcasting tip transactions. Blockchain infrastructure, not an AI service.
+- **Testnet faucets** — Candide and Pimlico for mock USDT, a public Sepolia faucet for ETH, used only to fund demo wallets.
 
-No pre-existing project code was reused; the codebase was built during the hackathon. Open-source dependencies are listed in `package.json`.
+No pre-existing project code went into this — it was built during the hackathon window. Open-source dependencies are listed in `package.json`.
 
 ---
 
-## Roadmap (post first-cut hardening)
+## Roadmap
 
-- **Multi-writer rooms** — let any fan (not just the creator) durably append via Autobase's `addWriter`, already proven in `spikes/spike-autobase.mjs`.
-- **Assistant RAG** — upgrade the match assistant to QVAC's full RAG pipeline over live match data + a higher-quality LLM translation fallback for idioms/slang.
-- **Gasless USD₮ tipping** — WDK ERC-4337 / EIP-7702 modules so fans pay fees in USD₮, no ETH needed.
-- **Native Pear app** — package the P2P core into a Bare worklet + Electron shell, distributed via `pear://` with peer-to-peer updates.
+- **Multi-writer rooms** — any fan, not just the creator, durably appends via Autobase's `addWriter`. Already proven in `spikes/spike-autobase.mjs`.
+- **Assistant RAG** — QVAC's full RAG pipeline over live match data, plus a stronger LLM fallback for translating idiom and slang.
+- **Gasless USDT tipping** — WDK's ERC-4337/EIP-7702 modules, so fans pay fees in USDT and never need ETH.
+- **Native Pear app** — the P2P core in a Bare worklet plus an Electron shell, distributed over `pear://` with peer-to-peer updates.
 
 ## Running multiple fans on one machine (for testing)
 
-Each backend is one fan (`npm run demo:minh`, `demo:alex`, or `PORT=... NAME=... LANG_CODE=... WALLET_DIR=... node src/backend.mjs` for more). This works great for local testing, with one caveat: QVAC's model cache/registry (`~/.qvac`) is shared machine-wide, and each backend spawns its own `bare` inference worker — running several at once can occasionally hit a transient "file descriptor could not be locked" the first time two backends need the registry at the same instant. `src/ai.mjs`/`src/assistant.mjs` retry automatically, so it self-heals within a couple seconds. This never happens in real use: each fan is on their own device with their own cache.
+Each backend is one fan: `npm run demo:minh`, `demo:alex`, or `PORT=... NAME=... LANG_CODE=... WALLET_DIR=... node src/backend.mjs` for more. This works fine for local testing with one caveat — QVAC's model cache (`~/.qvac`) is shared machine-wide, and each backend spawns its own `bare` inference worker, so running several at once can occasionally hit a transient "file descriptor could not be locked" the first time two backends hit the registry at the same instant. `src/ai.mjs` and `src/assistant.mjs` retry automatically and it self-heals within a couple seconds. This never comes up in real use — every fan is on their own device with their own cache.
 
 ---
 

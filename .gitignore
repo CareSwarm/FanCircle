@@ -21,3 +21,5 @@ TETHER DEVELOPERS CUP *.docx
 chain/out/
 chain/cache/
 chain/broadcast/
+# Local editor/tooling config
+.claude/
