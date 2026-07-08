@@ -21,7 +21,7 @@ P2P for rooms nobody can shut down, on-device AI so a fan on a bad connection ca
 **Prerequisites:** [Node.js](https://nodejs.org) ≥ 22.17 (`node -v` to check), macOS / Linux / Windows. [ffmpeg](https://ffmpeg.org) is optional, only needed for voice notes; everything else runs without it.
 
 ```bash
-git clone <this-repo>
+git clone https://github.com/CareSwarm/FanCircle.git
 cd FanCircle
 npm install
 ```
