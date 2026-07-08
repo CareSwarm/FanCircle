@@ -23,3 +23,5 @@ chain/cache/
 chain/broadcast/
 # Local editor/tooling config
 .claude/
+# Video shooting notes (not project docs)
+DEMO_SCRIPT.md
