@@ -104,12 +104,14 @@ Both wallets start with 1000 USDT; the tip button sends a real transfer on the l
 node scripts/wallet-info.mjs
 ```
 
-For each address: grab test ETH from a Sepolia faucet ([sepolia-faucet.pk910.de](https://sepolia-faucet.pk910.de) or [Google Cloud's](https://cloud.google.com/application/web3/faucet/ethereum/sepolia)), grab mock USDT from the [Candide](https://dashboard.candide.dev/faucet) or [Pimlico](https://dashboard.pimlico.io/test-erc20-faucet) test-ERC20 faucet, note the token contract, then:
+For each address: grab test ETH from a Sepolia faucet ([sepolia-faucet.pk910.de](https://sepolia-faucet.pk910.de) or [Google Cloud's](https://cloud.google.com/application/web3/faucet/ethereum/sepolia)), grab mock USDT from the [Candide](https://dashboard.candide.dev/faucet) test-ERC20 faucet, then:
 
 ```bash
-FANCIRCLE_USDT=0xYourTestUsdtContract npm run demo:minh
-FANCIRCLE_USDT=0xYourTestUsdtContract npm run demo:alex
+FANCIRCLE_USDT=0xd077A400968890Eacc75cdc901F0356c943e4fDb npm run demo:minh
+FANCIRCLE_USDT=0xd077A400968890Eacc75cdc901F0356c943e4fDb npm run demo:alex
 ```
+
+`0xd077A400968890Eacc75cdc901F0356c943e4fDb` is Candide's "Tether USD" test token on Sepolia (verified: `name()`/`symbol()`/`decimals()` resolve, and a real 20 USD₮ transfer confirmed on-chain — [tx](https://sepolia.etherscan.io/tx/0xcf2c209f766ad84107086245d64502c9f05a1bb9e7132462591b0a22c3906976)). The faucet page itself shows a *different* address — that's its own distributor/limiter contract, not the token; calling `balanceOf`/`decimals` on it reverts. If a faucet ever rotates its token, re-derive the real address from its contract's "Token Holdings" tab on Etherscan rather than the address the faucet page displays.
 
 Now the wallet shows a real USDT balance and the tip button sends a real on-chain transfer. Gasless "pay fees in USDT" via WDK's ERC-4337/7702 modules is on the roadmap below, not shipped yet.
 
