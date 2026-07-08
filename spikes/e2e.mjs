@@ -54,19 +54,25 @@ async function main () {
   const alexMembers = await alex.wait((m) => m.t === 'members' && m.list.length === 2)
   check(minhMembers.list.length === 2 && alexMembers.list.length === 2, 'PEARS: peers discovered each other, room has 2 members')
 
-  // 2) QVAC — Minh writes Vietnamese, Alex must receive an English translation
+  // 2) QVAC — Minh writes Vietnamese, Alex must receive an English translation.
+  // The chat bubble renders immediately (translated:null) and gets patched by
+  // a follow-up 'chat-translated' once ai.translate() resolves — so a cold
+  // model cache never leaves the receiving screen looking frozen.
   minh.send({ t: 'chat', text: 'Ai sẽ thắng trận bán kết tối nay?' })
   const atAlex = await alex.wait((m) => m.t === 'chat' && !m.self && m.lang === 'vi')
+  check(atAlex.translated === null, 'QVAC: chat renders immediately, translation not blocking the bubble')
+  const atAlexTr = await alex.wait((m) => m.t === 'chat-translated' && m.id === atAlex.id)
   console.log(`  Minh(vi): "${atAlex.text}"`)
-  console.log(`  → Alex sees: "${atAlex.translated}"`)
-  check(!!atAlex.translated && /win|semi|tonight|who/i.test(atAlex.translated), 'QVAC: vi→en translation delivered to English user')
+  console.log(`  → Alex sees: "${atAlexTr.translated}"`)
+  check(!!atAlexTr.translated && /win|semi|tonight|who/i.test(atAlexTr.translated), 'QVAC: vi→en translation delivered to English user')
 
   // reverse direction
   alex.send({ t: 'chat', text: 'I think Norway will win tonight.' })
   const atMinh = await minh.wait((m) => m.t === 'chat' && !m.self && m.lang === 'en')
+  const atMinhTr = await minh.wait((m) => m.t === 'chat-translated' && m.id === atMinh.id)
   console.log(`  Alex(en): "${atMinh.text}"`)
-  console.log(`  → Minh sees: "${atMinh.translated}"`)
-  check(!!atMinh.translated && atMinh.translated !== atMinh.text, 'QVAC: en→vi translation delivered to Vietnamese user')
+  console.log(`  → Minh sees: "${atMinhTr.translated}"`)
+  check(!!atMinhTr.translated && atMinhTr.translated !== atMinh.text, 'QVAC: en→vi translation delivered to Vietnamese user')
 
   // 3) PEARS — poll create + votes converge on both sides
   minh.send({ t: 'poll-create', question: 'Who wins?', options: ['Norway', 'England'] })

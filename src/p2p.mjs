@@ -90,8 +90,13 @@ export class Room extends EventEmitter {
 
   _handle (id, peer, msg) {
     if (msg.type === 'hello') {
+      const firstHello = !peer.helloSeen
+      peer.helloSeen = true
       peer.profile = msg.profile || peer.profile
-      this.emit('peer-join', { id, profile: peer.profile })
+      // hello can arrive again later (we re-broadcast it once we learn the
+      // room's logKey, so peers who missed it the first time still get it) —
+      // only announce the peer as joined once.
+      if (firstHello) this.emit('peer-join', { id, profile: peer.profile })
       if (msg.logKey && !this.logKey && !this.isCreator) {
         this.logKey = msg.logKey
         this._followLog(msg.logKey)

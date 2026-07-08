@@ -85,11 +85,20 @@ async function main () {
 
   await sleep(500)
   const samChats = sam.all((m) => m.t === 'chat')
-  console.log('\nSam chat inbox (should include BOTH pre-join messages):')
-  for (const c of samChats) console.log(`  [${c.lang}] ${c.text}  ${c.translated ? '→ ' + c.translated : ''}`)
   check(samChats.some((c) => c.text === 'Trận này chắc căng đây'), "AUTOBASE: Sam's history includes Minh's pre-join Vietnamese message")
   check(samChats.some((c) => c.text === 'Definitely, could go to penalties'), "AUTOBASE: Sam's history includes Alex's pre-join English message")
-  check(samChats.some((c) => c.translated), "AUTOBASE: Sam's backfilled chat was translated on-device into Sam's own language")
+
+  // Chat bubbles render immediately; translation patches in via a follow-up
+  // 'chat-translated' once ai.translate() resolves (first use of vi/en->es
+  // here, so a real cold-cache wait) — wait for those patches explicitly.
+  console.log('\nSam chat inbox (should include BOTH pre-join messages):')
+  let anyTranslated = false
+  for (const c of samChats) {
+    const tr = await sam.wait((m) => m.t === 'chat-translated' && m.id === c.id, 30000).catch(() => null)
+    console.log(`  [${c.lang}] ${c.text}  ${tr?.translated ? '→ ' + tr.translated : '(no translation)'}`)
+    if (tr?.translated) anyTranslated = true
+  }
+  check(anyTranslated, "AUTOBASE: Sam's backfilled chat was translated on-device into Sam's own language")
 
   const samPoll = sam.latest((m) => m.t === 'polls' && m.polls.length)?.polls?.[0]
   console.log('\nSam poll view:', samPoll)

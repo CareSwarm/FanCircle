@@ -89,11 +89,15 @@ async function onPeerMessage (msg) {
   }
   switch (msg.type) {
     case 'chat': {
-      let translated = null
+      // Render immediately, patch the translation in once it resolves — on a
+      // cold model cache that first translate() can take a while, and the
+      // receiving screen shouldn't sit blank for it.
+      pushUI({ t: 'chat', id: msg.id, from: msg.from, name: msg.name, lang: msg.lang, text: msg.text, translated: null, ts: msg.ts, self: false })
       if (msg.lang && msg.lang !== state.profile.lang) {
-        try { translated = await ai.translate(msg.text, msg.lang, state.profile.lang) } catch (e) { translated = null }
+        ai.translate(msg.text, msg.lang, state.profile.lang)
+          .then((translated) => { if (translated) pushUI({ t: 'chat-translated', id: msg.id, translated }) })
+          .catch(() => {})
       }
-      pushUI({ t: 'chat', id: msg.id, from: msg.from, name: msg.name, lang: msg.lang, text: msg.text, translated, ts: msg.ts, self: false })
       break
     }
     case 'reaction':

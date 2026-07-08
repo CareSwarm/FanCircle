@@ -32,6 +32,7 @@ function handle (m) {
     case 'room': showRoom(m.topic); break
     case 'members': members = m.list; renderMembers(); break
     case 'chat': renderChat(m); break
+    case 'chat-translated': patchTranslation(m.id, m.translated); break
     case 'reaction': floatReaction(m.emoji); break
     case 'polls': renderPolls(m.polls); break
     case 'tip': renderTip(m); break
@@ -98,11 +99,25 @@ function scroll () { chat.scrollTop = chat.scrollHeight }
 function renderChat (m) {
   const stick = atBottom()
   const d = el('div', 'msg' + (m.self ? ' self' : ''))
+  if (m.id) d.dataset.mid = m.id
   const head = el('div', 'head', `<span class="nm">${esc(m.name)}</span> <span class="lg">${esc(m.lang || '')}</span>`)
   d.appendChild(head)
   d.appendChild(el('div', 'orig', esc(m.text)))
-  if (m.translated && m.translated !== m.text) d.appendChild(el('div', 'trans', esc(m.translated)))
+  if (m.translated && m.translated !== m.text) {
+    d.appendChild(el('div', 'trans', esc(m.translated)))
+  } else if (!m.self && m.lang && m.lang !== myProfile.lang) {
+    // translation still running on-device — patched in via 'chat-translated'
+    d.appendChild(el('div', 'trans pending', 'translating…'))
+  }
   chat.appendChild(d)
+  if (stick) scroll()
+}
+function patchTranslation (id, translated) {
+  const bubble = chat.querySelector(`[data-mid="${id}"]`)
+  if (!bubble) return
+  const stick = atBottom()
+  bubble.querySelector('.trans.pending')?.remove()
+  if (translated) bubble.appendChild(el('div', 'trans', esc(translated)))
   if (stick) scroll()
 }
 function addSystem (t) { chat.appendChild(el('div', 'system', esc(t))); if (atBottom()) scroll() }
