@@ -56,10 +56,14 @@ button { font-family: inherit; cursor: pointer; }
 
 .btn { background: var(--card2); color: var(--text); border: 1px solid var(--line); border-radius: 10px; padding: 9px 12px; font-weight: 600; transition: .15s; }
 .btn:hover { border-color: var(--brand2); transform: translateY(-1px); }
-.btn.primary { background: linear-gradient(180deg, var(--brand), var(--brand2)); color: #06251a; border: none; }
-.btn.primary:hover { filter: brightness(1.05); }
-.btn.small { padding: 6px 10px; font-size: 12px; width: 100%; margin-top: 8px; }
-.btn.primary { width: 100%; }
+.btn:active { transform: translateY(0); }
+.btn.primary { background: linear-gradient(180deg, var(--brand), var(--brand2)); color: #06251a; border: none; box-shadow: 0 2px 10px rgba(34,211,127,.25); }
+.btn.primary:hover { filter: brightness(1.08); }
+.btn.small { padding: 6px 10px; font-size: 12px; }
+/* Opt-in, not a default — width:100% baked into .primary/.small silently
+   stretched every inline button that happened to share those classes
+   (composer Send, modal action rows) until each one got a manual reset. */
+.btn.full { width: 100%; margin-top: 8px; }
 .joinrow { display: flex; gap: 6px; margin-top: 8px; }
 .joinrow .input { flex: 1; min-width: 0; }
 .joinrow .btn { padding: 8px 10px; }
@@ -84,12 +88,13 @@ button { font-family: inherit; cursor: pointer; }
 @keyframes pulse { 50% { opacity: .35; } }
 
 .chat { flex: 1; overflow-y: auto; padding: 16px; display: flex; flex-direction: column; gap: 10px; }
-.empty { color: var(--muted); text-align: center; margin: auto; max-width: 420px; }
+.empty { color: var(--muted); text-align: center; margin: auto; max-width: 340px; line-height: 1.6; }
+.empty::before { content: "⚽"; display: block; font-size: 32px; margin-bottom: 10px; opacity: .6; }
 .msg { max-width: 75%; padding: 9px 12px; border-radius: 12px; background: var(--card2); border: 1px solid var(--line); }
 .msg.self { align-self: flex-end; background: linear-gradient(180deg, #1c3b5a, #163049); }
 .msg .head { font-size: 11px; color: var(--muted); margin-bottom: 3px; }
 .msg .head .nm { color: var(--text); font-weight: 700; }
-.msg .head .lg { text-transform: uppercase; font-size: 10px; }
+.msg .head .lg { text-transform: uppercase; font-size: 11px; }
 .msg .orig { }
 .msg .trans { margin-top: 5px; padding-top: 5px; border-top: 1px dashed var(--line); color: var(--brand); font-size: 13px; }
 .msg .trans::before { content: "🌐 "; }
@@ -128,17 +133,15 @@ button { font-family: inherit; cursor: pointer; }
 
 .composer { display: flex; gap: 8px; padding: 12px 16px; border-top: 1px solid var(--line); background: var(--bg2); }
 .grow { flex: 1; }
-/* .btn.primary defaults to width:100% for the sidebar/modal buttons — reset
-   it here so the inline Send button doesn't swallow the row. */
-.composer .btn { width: auto; flex: none; }
-.btn.mic { font-size: 16px; padding: 8px 12px; flex: none; }
+.composer .btn { flex: none; }
+.btn.mic { font-size: 16px; padding: 8px 12px; }
 .btn.mic.active { background: var(--danger); border-color: var(--danger); animation: pulse 1s infinite; }
 .btn.danger { background: var(--danger); border-color: var(--danger); color: #2a0006; }
 
 .recbar { display: flex; align-items: center; gap: 10px; padding: 10px 16px; background: rgba(255,92,114,.12); border-top: 1px solid var(--danger); font-size: 13px; font-weight: 600; white-space: nowrap; overflow-x: auto; }
 .recbar .recdot { color: var(--danger); animation: pulse 1s infinite; flex: none; }
 .recbar #recTimer { color: var(--muted); font-variant-numeric: tabular-nums; flex: none; }
-.recbar .btn { width: auto; margin-top: 0; flex: none; white-space: nowrap; }
+.recbar .btn { flex: none; white-space: nowrap; }
 .recbar .btn:first-of-type { margin-left: auto; }
 
 .msg.voice .vhead { display: flex; align-items: center; gap: 8px; }
@@ -149,10 +152,16 @@ button { font-family: inherit; cursor: pointer; }
 .poll { background: var(--bg); border: 1px solid var(--line); border-radius: 10px; padding: 10px; }
 .poll .q { font-weight: 700; margin-bottom: 8px; font-size: 13px; }
 .poll .opt { margin-bottom: 6px; cursor: pointer; }
+.poll .opt { border-radius: 6px; transition: background .12s; }
+.poll .opt:hover { background: rgba(255,255,255,.04); }
 .poll .opt .bar-wrap { display: flex; align-items: center; gap: 8px; }
-.poll .barbg { flex: 1; height: 22px; background: var(--card2); border-radius: 6px; overflow: hidden; position: relative; }
+.poll .barbg { flex: 1; height: 24px; background: var(--card2); border-radius: 6px; overflow: hidden; position: relative; }
 .poll .bar { height: 100%; background: linear-gradient(90deg, var(--brand2), var(--brand)); width: 0; transition: width .4s; }
-.poll .opt .lbl { position: absolute; left: 8px; top: 3px; font-size: 12px; font-weight: 600; color: #06251a; mix-blend-mode: screen; }
+/* A solid light label + shadow reads on both the filled (bright green) and
+   unfilled (dark) parts of the bar — the previous dark-text +
+   mix-blend-mode:screen trick only lightened enough over the fill, so a
+   0% option's label was nearly invisible against the dark track. */
+.poll .opt .lbl { position: absolute; left: 8px; top: 4px; font-size: 12px; font-weight: 600; color: var(--text); text-shadow: 0 1px 2px rgba(0,0,0,.65); }
 .poll .cnt { width: 26px; text-align: right; font-weight: 700; font-size: 12px; }
 .poll .opt.voted .barbg { outline: 2px solid var(--accent); }
 .poll .total { color: var(--muted); font-size: 11px; margin-top: 4px; }
@@ -170,8 +179,10 @@ button { font-family: inherit; cursor: pointer; }
 .toast.error { background: #3a1520; border: 1px solid var(--danger); color: var(--danger); }
 @keyframes slideIn { from { transform: translateX(20px); opacity: 0; } }
 
-.modal { position: fixed; inset: 0; background: rgba(4,8,16,.7); display: flex; align-items: center; justify-content: center; z-index: 70; }
-.modal-card { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); padding: 20px; width: 380px; max-width: 92vw; box-shadow: var(--shadow); }
+.modal { position: fixed; inset: 0; background: rgba(4,8,16,.7); backdrop-filter: blur(3px); display: flex; align-items: center; justify-content: center; z-index: 70; animation: fadeIn .15s; }
+@keyframes fadeIn { from { opacity: 0; } }
+.modal-card { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); padding: 20px; width: 380px; max-width: 92vw; box-shadow: var(--shadow); animation: popIn .15s ease-out; }
+@keyframes popIn { from { transform: scale(.96); opacity: 0; } }
 .modal-card h3 { margin: 0 0 12px; }
 .modal-card .input { width: 100%; margin-bottom: 8px; }
 .tiprow { display: flex; gap: 6px; align-items: center; margin: 12px 0; }
