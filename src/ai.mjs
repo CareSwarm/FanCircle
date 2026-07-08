@@ -29,6 +29,19 @@ export class AI {
   constructor () {
     // cache: "from>to" -> Promise<modelId>
     this._models = new Map()
+    // Serialize QVAC inference calls: firing translate()/transcribe() calls
+    // concurrently (e.g. optimistic chat translating several backfilled
+    // messages at once) let their token streams cross-contaminate — one
+    // request's output landing on another's id. Queue instead of running
+    // in parallel; on-device inference wasn't going to usefully parallelize
+    // on one CPU anyway.
+    this._queue = Promise.resolve()
+  }
+
+  _serialize (fn) {
+    const run = this._queue.then(fn, fn)
+    this._queue = run.catch(() => {})
+    return run
   }
 
   _loadPair (from, to) {
@@ -46,10 +59,12 @@ export class AI {
     const modelP = this._loadPair(from, to)
     if (!modelP) throw new Error(`no Bergamot pair ${from}->${to}`)
     const modelId = await modelP
-    const res = qvac.translate({ modelId, text, modelType: 'nmtcpp-translation', stream: true })
-    let out = ''
-    for await (const tok of res.tokenStream) out += tok
-    return out.trim()
+    return this._serialize(async () => {
+      const res = qvac.translate({ modelId, text, modelType: 'nmtcpp-translation', stream: true })
+      let out = ''
+      for await (const tok of res.tokenStream) out += tok
+      return out.trim()
+    })
   }
 
   // Translate text from -> to, pivoting through English when needed.
@@ -107,7 +122,9 @@ export class AI {
   // audioFilePath must be a decoded PCM/WAV-family file (see src/voice.mjs).
   async transcribe (audioFilePath, lang, onProgress) {
     const modelId = await this._whisperModel(lang, onProgress)
-    const text = await qvac.transcribe({ modelId, audioChunk: audioFilePath })
-    return text.trim()
+    return this._serialize(async () => {
+      const text = await qvac.transcribe({ modelId, audioChunk: audioFilePath })
+      return text.trim()
+    })
   }
 }
