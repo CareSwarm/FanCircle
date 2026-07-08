@@ -260,8 +260,21 @@ $('tipSend').addEventListener('click', () => {
 })
 function renderTip (m) {
   const wrap = el('div', 'tip-msg')
-  const link = m.explorer ? ` · <a href="${esc(m.explorer)}" target="_blank">view tx</a>` : ''
-  wrap.innerHTML = `💸 <b>${esc(m.name || 'someone')}</b> tipped ${esc(m.amount)} USD₮${link}`
+  // Local-chain demo mode has no public explorer (no URL to link to), but the
+  // tx hash is still real — show it either way so it's actually verifiable,
+  // as a link when there's somewhere to send it and a copyable hash otherwise.
+  let hashPart = ''
+  if (m.hash) {
+    const short = shortAddr(m.hash)
+    hashPart = m.explorer
+      ? ` · <a href="${esc(m.explorer)}" target="_blank" rel="noopener">${short} ↗</a>`
+      : ` · <span class="tip-hash" data-hash="${esc(m.hash)}" title="${esc(m.hash)} — click to copy">${short}</span>`
+  }
+  wrap.innerHTML = `💸 <b>${esc(m.name || 'someone')}</b> tipped ${esc(m.amount)} USD₮${hashPart}`
+  wrap.querySelector('.tip-hash')?.addEventListener('click', (e) => {
+    navigator.clipboard?.writeText(e.target.dataset.hash)
+    toast('Tx hash copied', 'ok')
+  })
   chat.appendChild(wrap); if (atBottom()) scroll()
 }
 

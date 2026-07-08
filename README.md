@@ -96,7 +96,7 @@ FANCIRCLE_CHAIN=local npm run demo:minh     # terminal C
 FANCIRCLE_CHAIN=local npm run demo:alex     # terminal D
 ```
 
-Both wallets start with 1000 USDT; the tip button sends a real transfer on the local chain (check the sender's balance drop). No faucet, no account, nothing to sign up for.
+Both wallets start with 1000 USDT; the tip button sends a real transfer on the local chain. The chat bubble shows the tx hash — click it to copy, then verify it yourself: `cast tx <hash> --rpc-url http://127.0.0.1:8545` (or just check the sender's balance drop). No faucet, no account, nothing to sign up for.
 
 **Option B: Sepolia public testnet, real and Etherscan-verifiable.** Print your two demo wallet addresses:
 
