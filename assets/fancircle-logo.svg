@@ -6,10 +6,8 @@
     </linearGradient>
   </defs>
 
-  <!-- flat single-color background, full bleed to the edge — no rounded
-       corners, no gradient, so there's no transparent corner to render as
-       white when flattened by a PNG exporter. -->
-  <rect x="0" y="0" width="512" height="512" fill="#0b1220"/>
+  <!-- transparent background on purpose: the shipped PNGs are cut out with
+       no backing fill, so this stays the source of truth for a re-export. -->
 
   <!-- P2P mesh ring: 8 peers, connected directly to each other (no center hub) -->
   <g stroke="#3a507e" stroke-width="2.5" opacity="0.85" fill="none">
