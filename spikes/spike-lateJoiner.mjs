@@ -78,10 +78,10 @@ async function main () {
   await sam.wait((m) => m.t === 'members' && m.list.length === 3)
   console.log('Sam joined. Waiting for room-log backfill…')
 
-  // The backend emits a 'system' sync message after replaying room-log history.
-  const synced = await sam.wait((m) => m.t === 'system' && /Synced/i.test(m.text), 20000).catch(() => null)
+  // The backend emits a 'synced' event after replaying room-log history.
+  const synced = await sam.wait((m) => m.t === 'synced', 20000).catch(() => null)
   check(!!synced, 'BACKFILL: Sam received a room-log history sync notice')
-  if (synced) console.log('  ' + synced.text)
+  if (synced) console.log(`  Synced ${synced.count} earlier updates`)
 
   await sleep(500)
   const samChats = sam.all((m) => m.t === 'chat')

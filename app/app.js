@@ -50,6 +50,7 @@ function handle (m) {
     case 'voice-pending-clear': if (voicePendingEl) { voicePendingEl.remove(); voicePendingEl = null }; break
     case 'voice': renderVoice(m); break
     case 'system': addSystem(m.text); break
+    case 'synced': renderSynced(m.count); break
     case 'toast': toast(m.text, m.level); break
   }
 }
@@ -130,6 +131,19 @@ function patchTranslation (id, translated) {
   if (stick) scroll()
 }
 function addSystem (t) { chat.appendChild(el('div', 'system', esc(t))); if (atBottom()) scroll() }
+
+// The room creator's Autobase durable log just handed us the full room
+// history — chat and polls from before we even connected. Worth a beat of
+// its own, not just another gray system line.
+function renderSynced (count) {
+  const stick = atBottom()
+  const d = el('div', 'synced-banner', `⏪ <b>Synced ${count} update${count === 1 ? '' : 's'}</b> from the room's durable log — full history, even though you weren't here for it`)
+  chat.appendChild(d)
+  if (stick) scroll()
+  const polls = $('polls')
+  polls.classList.add('flash')
+  setTimeout(() => polls.classList.remove('flash'), 1600)
+}
 
 $('composer').addEventListener('submit', (e) => {
   e.preventDefault()

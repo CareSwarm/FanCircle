@@ -15,7 +15,8 @@
     "chain:setup": "node scripts/setup-local-chain.mjs",
     "start": "node src/backend.mjs",
     "demo:minh": "NAME=Minh LANG_CODE=vi PORT=8080 WALLET_DIR=.wallet/minh node src/backend.mjs",
-    "demo:alex": "NAME=Alex LANG_CODE=en PORT=8081 WALLET_DIR=.wallet/alex node src/backend.mjs"
+    "demo:alex": "NAME=Alex LANG_CODE=en PORT=8081 WALLET_DIR=.wallet/alex node src/backend.mjs",
+    "demo:sam": "NAME=Sam LANG_CODE=es PORT=8082 WALLET_DIR=.wallet/sam node src/backend.mjs"
   },
   "dependencies": {
     "@qvac/sdk": "^0.14.1",

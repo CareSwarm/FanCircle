@@ -78,7 +78,7 @@ function wireRoom (room) {
 // backfills history instead of starting from a blank room.
 async function replayHistory (history) {
   for (const entry of history) await onPeerMessage(entry)
-  if (history.length) pushUI({ t: 'system', text: `Synced ${history.length} earlier update${history.length === 1 ? '' : 's'} from room history` })
+  if (history.length) pushUI({ t: 'synced', count: history.length })
 }
 
 async function onPeerMessage (msg) {

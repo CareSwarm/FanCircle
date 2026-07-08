@@ -103,6 +103,22 @@ button { font-family: inherit; cursor: pointer; }
 @keyframes dots { 0%{content:""} 25%{content:"."} 50%{content:".."} 75%{content:"..."} }
 
 .system { align-self: center; color: var(--muted); font-size: 12px; font-style: italic; }
+
+.synced-banner {
+  align-self: center; max-width: 90%; text-align: center;
+  margin: 6px 0; padding: 8px 14px; border-radius: 999px;
+  background: rgba(34, 211, 127, .12); border: 1px solid var(--brand);
+  color: var(--brand); font-size: 12.5px;
+  animation: syncedIn .4s ease-out;
+}
+.synced-banner b { color: var(--text); }
+@keyframes syncedIn { from { transform: scale(.9); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+
+.polls.flash { animation: pollFlash 1.6s ease-out; }
+@keyframes pollFlash {
+  0%, 100% { box-shadow: none; }
+  20% { box-shadow: 0 0 0 3px var(--brand); }
+}
 .tip-msg { align-self: center; background: rgba(255,210,63,.12); border: 1px solid var(--accent); color: var(--accent); padding: 7px 12px; border-radius: 999px; font-size: 12px; font-weight: 600; }
 .tip-msg a { color: var(--accent); text-decoration: underline; }
 
