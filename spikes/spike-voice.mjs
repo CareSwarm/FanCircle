@@ -1,16 +1,16 @@
 // De-risk voice notes — TRACK QVAC speech-to-text, multilingual.
 //   node spikes/spike-voice.mjs <audio-file> [language-code]
-import { loadModel, unloadModel, transcribe, WHISPER_BASE_Q8_0 } from '@qvac/sdk'
+import { loadModel, unloadModel, transcribe, WHISPER_SMALL_Q8_0 } from '@qvac/sdk'
 
 const file = process.argv[2]
 const lang = process.argv[3] || 'en'
 if (!file) { console.error('usage: node spike-voice.mjs <audio-file> [lang]'); process.exit(1) }
 
 async function main () {
-  console.log(`[spike-voice] loading WHISPER_BASE_Q8_0 (lang=${lang})…`)
+  console.log(`[spike-voice] loading WHISPER_SMALL_Q8_0 (lang=${lang})…`)
   const t0 = Date.now()
   const modelId = await loadModel({
-    modelSrc: WHISPER_BASE_Q8_0,
+    modelSrc: WHISPER_SMALL_Q8_0,
     modelConfig: { audio_format: 'f32le', language: lang, suppress_blank: true, suppress_nst: true, temperature: 0.0 },
     onProgress: () => {}
   })

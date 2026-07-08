@@ -114,14 +114,18 @@ export class AI {
 
   // ---- speech-to-text (voice notes) ----
   // Whisper's language hint is fixed at loadModel time, so cache one loaded
-  // model per spoken language (all WHISPER_BASE_Q8_0 — same ~80MB weights,
+  // model per spoken language (all WHISPER_SMALL_Q8_0 — same ~265MB weights,
   // different decode config; cheap to keep a couple resident during a demo).
+  // The base model (~80MB) drops words on casual, modal-elided speech
+  // ("who do you think win tonight" -> "went"/dropped entirely) and loses
+  // tone marks on Vietnamese ("thắng" -> "thang"); small fixes both cleanly
+  // in testing, worth the extra download for a track this central.
   _whisperModel (lang, onProgress) {
     const key = lang || 'auto'
     if (!this._whisper) this._whisper = new Map()
     if (!this._whisper.has(key)) {
       const p = withLockRetry(() => qvac.loadModel({
-        modelSrc: qvac.WHISPER_BASE_Q8_0,
+        modelSrc: qvac.WHISPER_SMALL_Q8_0,
         modelConfig: {
           audio_format: 'f32le',
           suppress_blank: true,
