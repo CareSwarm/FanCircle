@@ -152,7 +152,7 @@ async function handleVoice (ws, m) {
   let wavPath
   try {
     wavPath = await base64ToWav(audio, 'webm')
-    const text = await ai.transcribe(wavPath, state.profile.lang)
+    const text = await ai.transcribe(wavPath, state.profile.lang, progressToaster('Loading on-device speech model…'))
     if (!text) { pushUI({ t: 'voice-pending-clear' }); return ws.send(JSON.stringify({ t: 'toast', level: 'error', text: "Couldn't hear anything in that clip." })) }
     const msg = { type: 'voice', id: crypto.randomBytes(6).toString('hex'), from: state.room.me, name: state.profile.name, lang: state.profile.lang, text, audio, mime: m.mime || 'audio/webm', ts: Date.now() }
     state.room.broadcast(msg)
@@ -165,6 +165,19 @@ async function handleVoice (ws, m) {
   }
 }
 
+// QVAC's onProgress reports {percentage, downloaded, total} on an irregular
+// schedule — bucket by 25% so a toast fires once per quarter, not zero times
+// (exact-match modulo) or several times (loose modulo).
+function progressToaster (label) {
+  let shown = -1
+  return (p) => {
+    const bucket = Math.floor((p?.percentage ?? 0) / 25)
+    if (bucket <= shown || bucket <= 0) return
+    shown = bucket
+    pushUI({ t: 'toast', level: 'info', text: `${label} ${bucket * 25}%` })
+  }
+}
+
 async function handleAsk (question) {
   if (!state.room) return
   pushUI({ t: 'assistant-pending', name: state.profile.name, question })
@@ -173,10 +186,7 @@ async function handleAsk (question) {
   try { if (state.profile.lang !== 'en') qEn = await ai.translate(question, state.profile.lang, 'en') } catch {}
   let answer
   try {
-    answer = await assistant.ask(qEn, (p) => {
-      const pct = Math.floor((p?.progress ?? p ?? 0) * 100)
-      if (pct % 25 === 0) pushUI({ t: 'toast', level: 'info', text: `Loading match assistant… ${pct}%` })
-    })
+    answer = await assistant.ask(qEn, progressToaster('Loading match assistant…'))
   } catch (e) {
     pushUI({ t: 'toast', level: 'error', text: 'Assistant failed: ' + (e?.message || e) })
     return

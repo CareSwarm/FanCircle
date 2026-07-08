@@ -84,7 +84,7 @@ export class AI {
   // Whisper's language hint is fixed at loadModel time, so cache one loaded
   // model per spoken language (all WHISPER_BASE_Q8_0 — same ~150MB weights,
   // different decode config; cheap to keep a couple resident during a demo).
-  _whisperModel (lang) {
+  _whisperModel (lang, onProgress) {
     const key = lang || 'auto'
     if (!this._whisper) this._whisper = new Map()
     if (!this._whisper.has(key)) {
@@ -96,7 +96,8 @@ export class AI {
           suppress_nst: true,
           temperature: 0.0,
           ...(lang ? { language: lang } : { detect_language: true })
-        }
+        },
+        onProgress
       })).catch((e) => { this._whisper.delete(key); throw e })
       this._whisper.set(key, p)
     }
@@ -104,8 +105,8 @@ export class AI {
   }
 
   // audioFilePath must be a decoded PCM/WAV-family file (see src/voice.mjs).
-  async transcribe (audioFilePath, lang) {
-    const modelId = await this._whisperModel(lang)
+  async transcribe (audioFilePath, lang, onProgress) {
+    const modelId = await this._whisperModel(lang, onProgress)
     const text = await qvac.transcribe({ modelId, audioChunk: audioFilePath })
     return text.trim()
   }
