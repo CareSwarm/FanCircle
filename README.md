@@ -14,7 +14,7 @@ Built for the Tether Developers Cup, entering all three tracks:
 |-------|----------------------------|
 | **Pears** (Hyperswarm) | Match rooms (chat, reactions, prediction polls) travel peer to peer over the Hyperswarm DHT. No application server. Room history and poll tallies are backed by an Autobase replicated log, so a fan who joins mid match gets full history and a correct tally, not just whatever gossip happened to arrive after they connected. |
 | **QVAC** (on-device AI) | Every message is translated on the recipient's own device through the QVAC SDK (Bergamot NMT): Vietnamese, English, Spanish, Arabic, and more. Voice notes are transcribed on-device (Whisper) and translated the same way. A small grounded LLM answers football questions (`/ask`) in whatever language you ask it. No cloud API in the loop, anywhere. |
-| **WDK** | Self custodial USDT tipping to a room's host or best commentator. Each fan holds their own seed; a tip is a real on-chain transfer (Sepolia, or a local chain for zero-faucet testing). |
+| **WDK** | Self-custodial USDT tipping to a room's host or best commentator. Each fan holds their own seed; a tip is a real on-chain transfer (Sepolia, or a local chain for zero-faucet testing). |
 
 P2P for rooms nobody can shut down, on-device AI so a fan on a bad connection can still follow along, self-custodial money so a tip goes fan-to-fan with nothing sitting in the middle. Take any one of the three away and the pitch stops making sense, which is the point of entering all three tracks.
 
