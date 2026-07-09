@@ -4,7 +4,7 @@
 
 # FanCircle
 
-A peer to peer World Cup watch party. No server, no account. Fans chat, react, and predict scores over a raw Hyperswarm connection, in their own language, and tip each other USDT straight from their own wallet.
+A peer-to-peer World Cup watch party. No server, no account. Fans chat, react, and predict scores over a raw Hyperswarm connection, in their own language, and tip each other USDT straight from their own wallet.
 
 Group watch alongs today run on infrastructure that works against the fans who need it most: centralized chat that's blocked in half the countries that care about football, no real time translation for cross-border banter, and no clean way to send a friend, or a great match commentator on the other side of the planet, a few dollars. FanCircle is built to fix that during the one window it actually matters: the 2026 World Cup, final on July 19.
 
